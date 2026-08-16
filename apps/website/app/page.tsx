@@ -6,8 +6,8 @@ export default function Home() {
   return (
     <main className="overflow-x-hidden">
       {/* ---- Nav ---- */}
-      <header className="sticky top-0 z-50 border-b border-hairline bg-[var(--glass-bg)] [backdrop-filter:saturate(180%)_blur(20px)] [-webkit-backdrop-filter:saturate(180%)_blur(20px)]">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
+      <header className="sticky top-4 z-50 mx-auto w-[min(72rem,calc(100%-2rem))] rounded-[var(--r-pill)] border border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-[var(--e3)] [backdrop-filter:saturate(180%)_blur(24px)] [-webkit-backdrop-filter:saturate(180%)_blur(24px)]">
+        <div className="mx-auto flex w-full items-center justify-between py-2.5 pl-4 pr-2.5 sm:pl-6 sm:pr-3">
           <a href="#" className="flex items-center gap-2 font-bold tracking-tight">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-ink">
               A
