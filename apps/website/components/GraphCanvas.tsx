@@ -15,6 +15,7 @@
  */
 
 import { graph as engine, type Edge, type MapStatus, type Topic } from "@abh/core";
+import { readThemeColors, useTheme } from "@abh/ui/lite";
 import { useEffect, useRef } from "react";
 
 export interface GraphColors {
@@ -82,6 +83,19 @@ export default function GraphCanvas({
   const cbRef = useRef({ onSelect, onComplete });
   const selectedRef = useRef<string | null>(selectedId ?? null);
   const ghostRef = useRef<Set<string>>(ghostIds ?? new Set());
+
+  // Theme-aware neutrals for the canvas (labels/edges/locked/ring), refreshed
+  // whenever the theme flips so the hero graph reads well in light and dark.
+  const { resolved } = useTheme();
+  const readColors = () => {
+    const c = readThemeColors();
+    const fg = typeof window !== "undefined"
+      ? getComputedStyle(document.documentElement).getPropertyValue("--fg").trim() || c.label
+      : c.label;
+    return { ...c, fg };
+  };
+  const themeRef = useRef(readColors());
+  useEffect(() => { themeRef.current = readColors(); }, [resolved]);
 
   dataRef.current = { topics, edges };
   cbRef.current = { onSelect, onComplete };
@@ -283,12 +297,8 @@ export default function GraphCanvas({
         const active = engine.computeStatuses; // noop ref to keep engine imported
         void active;
         const on = focus ? lit.has(e.from) && lit.has(e.to) : true;
-        const fromKnown = topicById.get(e.from)?.progress === "known";
-        ctx.strokeStyle = on
-          ? fromKnown
-            ? "rgba(82,183,136,0.55)"
-            : "rgba(116,198,157,0.20)"
-          : "rgba(116,198,157,0.05)";
+        const tc = themeRef.current;
+        ctx.strokeStyle = on ? tc.edge : tc.muted;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
         ctx.lineTo(b.x, b.y);
@@ -309,7 +319,7 @@ export default function GraphCanvas({
         const fill = isGhost
           ? "rgba(199,125,255,0.10)"
           : status === "locked"
-            ? "#16342440"
+            ? themeRef.current.locked
             : base;
 
         ctx.globalAlpha = dim;
@@ -362,7 +372,7 @@ export default function GraphCanvas({
         if (t.id === selected) {
           ctx.beginPath();
           ctx.arc(nde.x, nde.y, r + 6, 0, Math.PI * 2);
-          ctx.strokeStyle = "#f4f1e8";
+          ctx.strokeStyle = themeRef.current.fg;
           ctx.lineWidth = 2 / view.scale;
           ctx.stroke();
         }
@@ -390,7 +400,7 @@ export default function GraphCanvas({
         const showLabel = view.scale > 0.7 || lit.has(t.id) || !focus;
         if (showLabel) {
           ctx.globalAlpha = dim * (focus && !lit.has(t.id) ? 0.15 : 0.92);
-          ctx.fillStyle = "#e7ecdf";
+          ctx.fillStyle = themeRef.current.label;
           ctx.font = `${12}px ui-sans-serif, system-ui, sans-serif`;
           ctx.textAlign = "center";
           ctx.textBaseline = "top";

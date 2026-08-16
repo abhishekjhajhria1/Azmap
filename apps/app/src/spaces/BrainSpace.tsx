@@ -29,24 +29,24 @@ export function BrainSpace() {
     <div className="p-5">
       {proposal ? (
         <>
-          <div className="mb-2 inline-flex rounded-full bg-violet/20 px-2.5 py-1 text-[11px] font-medium text-violet">✦ AI suggests</div>
+          <div className="mb-2 inline-flex rounded-full bg-ai/10 px-2.5 py-1 text-[11px] font-medium text-ai">✦ AI suggests</div>
           <h2 className="text-xl font-semibold">{proposal.title}</h2>
-          <p className="mt-3 text-sm leading-relaxed text-forest-200">{proposal.why}</p>
-          <button onClick={() => { void acceptProposal(proposal); setSelectedId(proposal.nodeId); }} className="mt-6 w-full rounded-lg bg-violet py-2.5 text-sm font-semibold text-forest-950 transition hover:brightness-110">+ Add to your map</button>
+          <p className="mt-3 text-sm leading-relaxed text-fg">{proposal.why}</p>
+          <button onClick={() => { void acceptProposal(proposal); setSelectedId(proposal.nodeId); }} className="mt-6 w-full rounded-lg bg-ai py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110">+ Add to your map</button>
         </>
       ) : topic ? (
         <>
           <div className="mb-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ background: `${domainColor(topic.tags[0])}22`, color: domainColor(topic.tags[0]) }}>{topic.tags[0] ?? "topic"}</div>
           <h2 className="text-xl font-semibold">{topic.title}</h2>
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-forest-300"><span className="h-2 w-2 rounded-full" style={{ background: STATUS[status].dot }} />{STATUS[status].label}</div>
-          {topic.whyItMatters && <p className="mt-4 text-sm leading-relaxed text-forest-200">{topic.whyItMatters}</p>}
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted"><span className="h-2 w-2 rounded-full" style={{ background: STATUS[status].dot }} />{STATUS[status].label}</div>
+          {topic.whyItMatters && <p className="mt-4 text-sm leading-relaxed text-fg">{topic.whyItMatters}</p>}
           {needs.length > 0 && <Rel title="Needs first" ids={needs} title2={title} onSel={setSelectedId} />}
           {unlocks.length > 0 && <Rel title="Unlocks" ids={unlocks} title2={title} onSel={setSelectedId} />}
           <div className="mt-6">
             {status === "known" ? (
-              <button onClick={() => void setProgress(topic.id, "not_started")} className="w-full rounded-lg border border-forest-700 py-2.5 text-sm font-semibold text-forest-200 transition hover:bg-forest-900">✓ Known — undo</button>
+              <button onClick={() => void setProgress(topic.id, "not_started")} className="w-full rounded-lg border border-hairline py-2.5 text-sm font-semibold text-fg transition hover:bg-surface">✓ Known — undo</button>
             ) : (
-              <button onClick={() => void complete(topic.id)} disabled={status === "locked"} className="w-full rounded-lg bg-amber py-2.5 text-sm font-semibold text-forest-950 transition hover:bg-amber-soft disabled:opacity-40">Mark known</button>
+              <button onClick={() => void complete(topic.id)} disabled={status === "locked"} className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110 disabled:opacity-40">Mark known</button>
             )}
           </div>
         </>
@@ -62,13 +62,13 @@ export function BrainSpace() {
           <div>
             <div className="text-4xl">🧠</div>
             <h2 className="mt-3 text-xl font-semibold">Your brain is empty — for now</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-forest-300">Ask how something works, or start a roadmap. Everything you learn lands here and connects.</p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-muted">Ask how something works, or start a roadmap. Everything you learn lands here and connects.</p>
           </div>
         </div>
       ) : (
         <GraphView nodes={nodes} links={links} selectedId={selectedId} onSelect={setSelectedId} className="absolute inset-0 h-full w-full" />
       )}
-      <div className="pointer-events-none absolute left-3 top-3 rounded-lg border border-forest-800/70 bg-forest-950/80 px-3 py-1.5 text-[11px] text-forest-400 backdrop-blur">Your second brain · {topics.length} topics</div>
+      <div className="glass pointer-events-none absolute left-3 top-3 rounded-lg px-3 py-1.5 text-[11px] text-subtle">Your second brain · {topics.length} topics</div>
     </div>
   );
 
@@ -78,10 +78,10 @@ export function BrainSpace() {
 function Rel({ title, ids, title2, onSel }: { title: string; ids: string[]; title2: (id: string) => string; onSel: (id: string) => void }) {
   return (
     <div className="mt-5">
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-amber">{title}</div>
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-accent">{title}</div>
       <div className="flex flex-col gap-1">
         {ids.map((id) => (
-          <button key={id} onClick={() => onSel(id)} className="truncate rounded-md border border-forest-800 px-2.5 py-1.5 text-left text-[13px] text-forest-100 transition hover:border-forest-600 hover:bg-forest-900">{title2(id)}</button>
+          <button key={id} onClick={() => onSel(id)} className="truncate rounded-md border border-hairline px-2.5 py-1.5 text-left text-[13px] text-fg transition hover:border-hairline hover:bg-surface">{title2(id)}</button>
         ))}
       </div>
     </div>

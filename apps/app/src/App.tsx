@@ -1,4 +1,4 @@
-import { AdaptiveShell, type NavItem, useAbh } from "@abh/ui";
+import { AdaptiveShell, type NavItem, ThemeToggle, useAbh } from "@abh/ui";
 import { type ReactElement, useState } from "react";
 import { AskAnything } from "./AskAnything";
 import { Onboarding } from "./Onboarding";
@@ -23,7 +23,7 @@ export function App() {
   const [space, setSpace] = useState<SpaceId>("brain");
 
   if (!ready) {
-    return <div className="grid h-[100dvh] place-items-center text-forest-400">Loading your map…</div>;
+    return <div className="grid h-[100dvh] place-items-center text-subtle">Loading your map…</div>;
   }
 
   if (!profile || !profile.onboardedAt) {
@@ -38,7 +38,8 @@ export function App() {
         items={SPACES.map((s) => s.item)}
         activeId={space}
         onSelect={(id) => setSpace(id as SpaceId)}
-        brand={<span className="grid h-8 w-8 place-items-center rounded-lg bg-forest-600 text-sm font-bold">A</span>}
+        brand={<span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-sm font-bold text-accent-ink">A</span>}
+        action={<ThemeToggle />}
       >
         <div className="h-full">{active.render()}</div>
       </AdaptiveShell>

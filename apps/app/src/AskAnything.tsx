@@ -47,60 +47,60 @@ export function AskAnything() {
     <>
       <button
         onClick={() => setOpen(true)}
-        className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full border border-violet/50 bg-forest-900/90 px-4 py-2.5 text-sm font-medium text-violet-soft shadow-xl backdrop-blur transition hover:border-violet md:bottom-4"
+        className="glass fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm font-medium text-ai transition hover:brightness-110 md:bottom-4"
       >
         ✦ Ask anything
-        <kbd className="ml-1 hidden rounded border border-forest-700 px-1.5 py-0.5 text-[10px] text-forest-400 sm:inline">⌘K</kbd>
+        <kbd className="ml-1 hidden rounded border border-hairline px-1.5 py-0.5 text-[10px] text-subtle sm:inline">⌘K</kbd>
       </button>
 
-      {flash && <div className="fixed bottom-32 right-4 z-50 rounded-lg border border-violet/40 bg-forest-900/95 px-4 py-2.5 text-sm text-violet-soft shadow-xl md:bottom-16">✦ {flash}</div>}
+      {flash && <div className="glass fixed bottom-32 right-4 z-50 rounded-lg px-4 py-2.5 text-sm text-ai md:bottom-16">✦ {flash}</div>}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-forest-950/70 p-4 pt-[8vh] backdrop-blur-sm" onClick={() => setOpen(false)}>
-          <div className="flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl border border-forest-700/70 bg-forest-900 shadow-2xl" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-center gap-3 border-b border-forest-800 px-4 py-3">
-              <span className="text-violet">✦</span>
-              <input autoFocus value={query} onChange={(e) => { setQuery(e.target.value); setSelected(null); }} onKeyDown={(e) => e.key === "Enter" && !selected && results.length === 0 && addFreeform()} placeholder="Ask how anything works — or search…" className="flex-1 bg-transparent text-base outline-none placeholder:text-forest-500" />
-              <button onClick={() => setOpen(false)} className="text-xs text-forest-500 hover:text-parchment">esc</button>
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/30 p-4 pt-[8vh] backdrop-blur-sm" onClick={() => setOpen(false)}>
+          <div className="glass flex max-h-[80vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl shadow-2xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 border-b border-hairline px-4 py-3">
+              <span className="text-ai">✦</span>
+              <input autoFocus value={query} onChange={(e) => { setQuery(e.target.value); setSelected(null); }} onKeyDown={(e) => e.key === "Enter" && !selected && results.length === 0 && addFreeform()} placeholder="Ask how anything works — or search…" className="flex-1 bg-transparent text-base outline-none placeholder:text-subtle" />
+              <button onClick={() => setOpen(false)} className="text-xs text-subtle hover:text-fg">esc</button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto p-2">
               {selected ? (
                 <div className="p-3">
-                  <button onClick={() => { setSelected(null); setAddedId(null); }} className="mb-3 text-xs text-forest-400 hover:text-parchment">← back</button>
+                  <button onClick={() => { setSelected(null); setAddedId(null); }} className="mb-3 text-xs text-subtle hover:text-fg">← back</button>
                   <div className="flex items-center justify-between gap-3">
                     <h3 className="text-lg font-semibold">{selected.title}</h3>
-                    {addedId && <span className="shrink-0 rounded-full bg-forest-700/60 px-2.5 py-1 text-[11px] font-medium text-forest-200">✓ In your brain</span>}
+                    {addedId && <span className="shrink-0 rounded-full bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-fg">✓ In your brain</span>}
                   </div>
-                  <p className="mt-2 text-sm leading-relaxed text-forest-200">{selected.blurb}</p>
-                  <p className="mt-2 text-[11px] text-forest-500">A curated explainer — the personalised AI version is coming soon.</p>
-                  <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-violet">Keep exploring</div>
+                  <p className="mt-2 text-sm leading-relaxed text-fg">{selected.blurb}</p>
+                  <p className="mt-2 text-[11px] text-subtle">A curated explainer — the personalised AI version is coming soon.</p>
+                  <div className="mt-4 text-[11px] font-semibold uppercase tracking-wider text-ai">Keep exploring</div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {selected.sparks.map((s) => (
-                      <button key={s} onClick={() => addSpark(s, selected.domain)} className="rounded-full border border-forest-700 bg-forest-900/60 px-3 py-1.5 text-xs text-forest-100 transition hover:border-violet/60 hover:text-violet-soft">{s} <span className="text-violet">+</span></button>
+                      <button key={s} onClick={() => addSpark(s, selected.domain)} className="rounded-full border border-hairline bg-surface px-3 py-1.5 text-xs text-fg transition hover:border-ai hover:text-ai">{s} <span className="text-ai">+</span></button>
                     ))}
                   </div>
                 </div>
               ) : (
                 <>
                   {query.trim() && (
-                    <button onClick={addFreeform} className="mb-2 flex w-full items-center gap-3 rounded-lg border border-violet/30 bg-violet/5 px-3 py-3 text-left transition hover:border-violet/60">
-                      <span className="grid h-8 w-8 place-items-center rounded-full bg-violet/20 text-violet">+</span>
-                      <span><span className="block text-sm font-medium text-violet-soft">Add “{query.trim()}” to your brain</span><span className="block text-xs text-forest-400">AI explainer coming soon — the node joins your brain now</span></span>
+                    <button onClick={addFreeform} className="mb-2 flex w-full items-center gap-3 rounded-lg border border-ai bg-ai/10 px-3 py-3 text-left transition hover:border-ai">
+                      <span className="grid h-8 w-8 place-items-center rounded-full bg-ai/10 text-ai">+</span>
+                      <span><span className="block text-sm font-medium text-ai">Add “{query.trim()}” to your brain</span><span className="block text-xs text-subtle">AI explainer coming soon — the node joins your brain now</span></span>
                     </button>
                   )}
-                  <div className="px-1 py-1 text-[11px] font-semibold uppercase tracking-wider text-forest-400">{query.trim() ? "How things work" : "Explore how things work"}</div>
+                  <div className="px-1 py-1 text-[11px] font-semibold uppercase tracking-wider text-subtle">{query.trim() ? "How things work" : "Explore how things work"}</div>
                   <div className="grid gap-1.5 sm:grid-cols-2">
                     {results.map((e) => (
-                      <button key={e.id} onClick={() => addExplainer(e)} className="rounded-lg border border-forest-800 bg-forest-950/40 px-3 py-2.5 text-left transition hover:border-forest-600 hover:bg-forest-900">
+                      <button key={e.id} onClick={() => addExplainer(e)} className="rounded-lg border border-hairline bg-bg px-3 py-2.5 text-left transition hover:border-hairline hover:bg-surface">
                         <div className="text-sm font-medium">{e.q}</div>
-                        <div className="mt-0.5 line-clamp-2 text-xs text-forest-400">{e.blurb}</div>
+                        <div className="mt-0.5 line-clamp-2 text-xs text-subtle">{e.blurb}</div>
                       </button>
                     ))}
                   </div>
                 </>
               )}
             </div>
-            <div className="border-t border-forest-800 px-4 py-2 text-center text-[11px] text-forest-500">Everyone's free to explore — whatever you open joins your brain.</div>
+            <div className="border-t border-hairline px-4 py-2 text-center text-[11px] text-subtle">Everyone's free to explore — whatever you open joins your brain.</div>
           </div>
         </div>
       )}

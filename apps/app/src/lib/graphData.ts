@@ -18,16 +18,21 @@ export function buildGraphData(
     degree.set(e.to, (degree.get(e.to) ?? 0) + 1);
   }
 
-  const nodes: GraphNode[] = topics.map((t) => {
-    const status = statuses.get(t.id) ?? "locked";
-    const base = domainColor(t.tags[0]);
-    return {
-      id: t.id,
-      label: t.title,
-      color: status === "locked" ? "#1b3a2b" : base,
-      weight: degree.get(t.id) ?? 0,
-    };
-  });
+  // The graph renders on WebGL, so colours must be concrete (no CSS vars). The
+  // neutral "locked" tone is resolved from tokens inside GraphView; here we just
+  // pass the domain accent + a `locked` flag.
+  const concrete = (domain: string | undefined) => {
+    const c = domainColor(domain);
+    return c.startsWith("var(") ? "#8a9298" : c;
+  };
+
+  const nodes: GraphNode[] = topics.map((t) => ({
+    id: t.id,
+    label: t.title,
+    color: concrete(t.tags[0]),
+    locked: (statuses.get(t.id) ?? "locked") === "locked",
+    weight: degree.get(t.id) ?? 0,
+  }));
 
   const present = new Set(topics.map((t) => t.id));
   const links: GraphLink[] = edges
@@ -35,7 +40,7 @@ export function buildGraphData(
     .map((e) => ({ source: e.from, target: e.to, soft: e.strength === "soft" }));
 
   for (const p of proposals) {
-    nodes.push({ id: p.nodeId, label: p.title, color: "#c77dff", ghost: true });
+    nodes.push({ id: p.nodeId, label: p.title, color: concrete(p.domain), ghost: true });
     for (const from of p.needs) {
       if (present.has(from)) links.push({ source: from, target: p.nodeId, soft: true });
     }

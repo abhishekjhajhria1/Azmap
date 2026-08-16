@@ -2,25 +2,29 @@
 
 /**
  * MasterDetail — list + detail that adapts:
- *   compact → single pane; detail slides up as a bottom sheet
+ *   compact → single pane; detail slides up as a glass bottom sheet
  *   medium/expanded → two panes side by side
  *
- * Used by the mind-map and roadmap spaces so an inspector is a sheet on a phone
- * and a permanent pane on an iPad, from one component.
+ * Token-driven, so it follows light/dark. Used by the mind-map and roadmap
+ * spaces so an inspector is a sheet on a phone and a pane on an iPad.
  */
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useBreakpoint } from "./breakpoints.js";
-import { color } from "./theme.js";
 
 interface Props {
   master: ReactNode;
   detail: ReactNode;
   detailOpen: boolean;
   onCloseDetail?: () => void;
-  /** Detail pane width on wide screens. */
   detailWidth?: number;
 }
+
+const glass: CSSProperties = {
+  background: "var(--glass-bg)",
+  WebkitBackdropFilter: "saturate(180%) blur(var(--glass-blur))",
+  backdropFilter: "saturate(180%) blur(var(--glass-blur))",
+};
 
 export function MasterDetail({ master, detail, detailOpen, onCloseDetail, detailWidth = 340 }: Props) {
   const compact = useBreakpoint() === "compact";
@@ -30,7 +34,7 @@ export function MasterDetail({ master, detail, detailOpen, onCloseDetail, detail
       <div style={{ display: "flex", height: "100%", minHeight: 0 }}>
         <div style={{ flex: 1, minWidth: 0, position: "relative" }}>{master}</div>
         {detailOpen && (
-          <div style={{ width: detailWidth, flexShrink: 0, borderLeft: `1px solid ${color.forest800}`, overflowY: "auto" }}>
+          <div style={{ ...glass, width: detailWidth, flexShrink: 0, borderLeft: "1px solid var(--glass-border)", overflowY: "auto" }}>
             {detail}
           </div>
         )}
@@ -43,20 +47,18 @@ export function MasterDetail({ master, detail, detailOpen, onCloseDetail, detail
       {master}
       {detailOpen && (
         <>
-          <div
-            onClick={onCloseDetail}
-            style={{ position: "absolute", inset: 0, background: "rgba(10,26,18,0.5)", zIndex: 20 }}
-          />
+          <div onClick={onCloseDetail} style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.35)", zIndex: 20 }} />
           <div
             style={{
-              position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 21,
+              ...glass, position: "absolute", left: 0, right: 0, bottom: 0, zIndex: 21,
               maxHeight: "72%", overflowY: "auto",
-              background: color.forest900, borderTop: `1px solid ${color.forest700}`,
-              borderTopLeftRadius: 18, borderTopRightRadius: 18, paddingBottom: "env(safe-area-inset-bottom)",
+              borderTop: "1px solid var(--glass-border)",
+              borderTopLeftRadius: 20, borderTopRightRadius: 20,
+              paddingBottom: "env(safe-area-inset-bottom)",
             }}
           >
             <div style={{ display: "flex", justifyContent: "center", padding: "8px 0 0" }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: color.forest700 }} />
+              <div style={{ width: 36, height: 4, borderRadius: 2, background: "var(--hairline)" }} />
             </div>
             {detail}
           </div>

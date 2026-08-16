@@ -1,0 +1,173 @@
+/**
+ * ABH design tokens — one semantic system, switched light/dark.
+ *
+ * Neutral graphite/white base with the brand (green/amber/violet) kept as
+ * accents only. Elevated surfaces use the `.glass` material; content stays
+ * clean. Tokens are consumed by Tailwind (via CSS-var colours), by @abh/ui's
+ * inline styles, and by the graph (read at runtime).
+ *
+ * Theme resolution:
+ *   :root                          → light
+ *   system dark (no explicit pick) → dark
+ *   [data-theme="dark|light"]      → forced, wins over system
+ */
+
+:root {
+  color-scheme: light;
+
+  --bg: #f4f6f8;
+  --ambient-1: rgba(64, 145, 108, 0.10);
+  --ambient-2: rgba(199, 125, 255, 0.08);
+  --ambient-3: rgba(233, 185, 73, 0.08);
+
+  --surface: #ffffff;
+  --surface-2: #eceff2;
+
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-border: rgba(15, 23, 30, 0.08);
+  --glass-shadow: 0 10px 34px rgba(15, 23, 30, 0.10);
+  --glass-blur: 20px;
+
+  --fg: #10171c;
+  --fg-muted: #4c565d;
+  --fg-subtle: #8b959c;
+  --hairline: rgba(15, 23, 30, 0.09);
+
+  --accent: #e0a92e;          /* primary action fill (amber), dark ink on top */
+  --accent-contrast: #1b1300;
+  --known: #2d7d5a;           /* green, legible as text on light */
+  --available: #c68a1e;
+  --ai: #8b3ffb;              /* violet */
+  --ring: rgba(224, 169, 46, 0.45);
+
+  --graph-label: #26313a;
+  --graph-edge: rgba(15, 23, 30, 0.16);
+  --graph-edge-soft: rgba(139, 63, 251, 0.28);
+  --graph-muted: rgba(15, 23, 30, 0.10);
+  --graph-locked: #cdd4d9;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #0b0e10;
+    --ambient-1: rgba(82, 183, 136, 0.10);
+    --ambient-2: rgba(199, 125, 255, 0.10);
+    --ambient-3: rgba(233, 185, 73, 0.07);
+
+    --surface: #15191d;
+    --surface-2: #1c2126;
+
+    --glass-bg: rgba(24, 29, 34, 0.55);
+    --glass-border: rgba(255, 255, 255, 0.09);
+    --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    --glass-blur: 22px;
+
+    --fg: #f1f4f6;
+    --fg-muted: #a6afb5;
+    --fg-subtle: #6a747b;
+    --hairline: rgba(255, 255, 255, 0.09);
+
+    --accent: #e9b949;
+    --accent-contrast: #0b0e10;
+    --known: #52b788;
+    --available: #e9b949;
+    --ai: #c77dff;
+    --ring: rgba(233, 185, 73, 0.5);
+
+    --graph-label: #e7ecef;
+    --graph-edge: rgba(116, 198, 157, 0.18);
+    --graph-edge-soft: rgba(199, 125, 255, 0.24);
+    --graph-muted: rgba(116, 198, 157, 0.12);
+    --graph-locked: #1b3a2b;
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #0b0e10;
+  --ambient-1: rgba(82, 183, 136, 0.10);
+  --ambient-2: rgba(199, 125, 255, 0.10);
+  --ambient-3: rgba(233, 185, 73, 0.07);
+
+  --surface: #15191d;
+  --surface-2: #1c2126;
+
+  --glass-bg: rgba(24, 29, 34, 0.55);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --glass-blur: 22px;
+
+  --fg: #f1f4f6;
+  --fg-muted: #a6afb5;
+  --fg-subtle: #6a747b;
+  --hairline: rgba(255, 255, 255, 0.09);
+
+  --accent: #e9b949;
+  --accent-contrast: #0b0e10;
+  --known: #52b788;
+  --available: #e9b949;
+  --ai: #c77dff;
+  --ring: rgba(233, 185, 73, 0.5);
+
+  --graph-label: #e7ecef;
+  --graph-edge: rgba(116, 198, 157, 0.18);
+  --graph-edge-soft: rgba(199, 125, 255, 0.24);
+  --graph-muted: rgba(116, 198, 157, 0.12);
+  --graph-locked: #1b3a2b;
+}
+
+/* Smooth the flip between themes (but never animate layout). */
+:root,
+:root * {
+  transition-property: background-color, border-color, color, box-shadow, fill, stroke;
+  transition-duration: 220ms;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* The frosted-glass material — for elevated/floating surfaces only. */
+.glass {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(var(--glass-blur));
+  backdrop-filter: saturate(180%) blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+}
+
+/* Calm ambient backdrop so the glass blur has something to blur. */
+.abh-ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--bg);
+  overflow: hidden;
+}
+.abh-ambient::before,
+.abh-ambient::after {
+  content: "";
+  position: absolute;
+  width: 60vmax;
+  height: 60vmax;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 1;
+}
+.abh-ambient::before {
+  top: -20vmax;
+  left: -10vmax;
+  background: radial-gradient(circle at center, var(--ambient-1), transparent 70%);
+}
+.abh-ambient::after {
+  bottom: -25vmax;
+  right: -15vmax;
+  background: radial-gradient(circle at center, var(--ambient-2), transparent 70%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root,
+  :root * {
+    transition-duration: 0ms;
+  }
+}

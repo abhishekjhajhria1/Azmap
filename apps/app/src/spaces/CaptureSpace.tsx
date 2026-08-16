@@ -24,27 +24,27 @@ export function CaptureSpace() {
 
   return (
     <div className="mx-auto h-full max-w-2xl overflow-y-auto px-5 py-8">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber">Capture</p>
+      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Capture</p>
       <h1 className="mt-2 text-2xl font-bold">Catch it before it's gone</h1>
-      <p className="mt-2 text-sm text-forest-300">Paste a link or jot a note. Add it to your brain to connect it to what you already know. The browser extension drops clips here too.</p>
+      <p className="mt-2 text-sm text-muted">Paste a link or jot a note. Add it to your brain to connect it to what you already know. The browser extension drops clips here too.</p>
 
       <div className="mt-5 flex gap-2">
-        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Paste a link or write a note…" className="flex-1 rounded-lg border border-forest-700 bg-forest-900 px-3 py-2.5 text-sm outline-none placeholder:text-forest-600 focus:border-amber" />
-        <button onClick={add} className="rounded-lg bg-forest-700 px-4 py-2.5 text-sm font-semibold transition hover:bg-forest-600">Capture</button>
+        <input value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => e.key === "Enter" && add()} placeholder="Paste a link or write a note…" className="flex-1 rounded-lg border border-hairline bg-surface px-3 py-2.5 text-sm outline-none placeholder:text-subtle focus:border-accent" />
+        <button onClick={add} className="rounded-lg bg-surface-2 px-4 py-2.5 text-sm font-semibold transition hover:bg-surface-2">Capture</button>
       </div>
 
       <div className="mt-6">
-        {recent.length === 0 && <div className="rounded-xl border border-forest-800 bg-forest-900/30 px-4 py-8 text-center text-sm text-forest-400">Nothing captured yet.</div>}
+        {recent.length === 0 && <div className="rounded-xl border border-hairline bg-surface px-4 py-8 text-center text-sm text-subtle">Nothing captured yet.</div>}
         {recent.map((c) => (
-          <div key={c.id} className="mb-2 flex items-center justify-between gap-3 rounded-xl border border-forest-800 bg-forest-900/30 px-4 py-3">
+          <div key={c.id} className="mb-2 flex items-center justify-between gap-3 rounded-xl border border-hairline bg-surface px-4 py-3">
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <span className="shrink-0 rounded border border-forest-700 px-1.5 py-0.5 text-[10px] uppercase text-forest-300">{c.kind}</span>
+                <span className="shrink-0 rounded border border-hairline px-1.5 py-0.5 text-[10px] uppercase text-muted">{c.kind}</span>
                 <span className="truncate text-sm">{c.title || c.url || "Untitled"}</span>
               </div>
-              {c.text && <div className="mt-1 line-clamp-2 text-xs text-forest-400">{c.text}</div>}
+              {c.text && <div className="mt-1 line-clamp-2 text-xs text-subtle">{c.text}</div>}
             </div>
-            <button onClick={() => void explore({ title: c.title || c.url || "Captured", why: c.text || c.url || "", domain: "everyday" })} className="shrink-0 rounded-md bg-forest-700 px-2.5 py-1.5 text-xs font-semibold transition hover:bg-forest-600">→ Brain</button>
+            <button onClick={() => void explore({ title: c.title || c.url || "Captured", why: c.text || c.url || "", domain: "everyday" })} className="shrink-0 rounded-md bg-surface-2 px-2.5 py-1.5 text-xs font-semibold transition hover:bg-surface-2">→ Brain</button>
           </div>
         ))}
       </div>

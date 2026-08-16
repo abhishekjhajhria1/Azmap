@@ -1,6 +1,6 @@
 import { MapStore } from "@abh/core";
 import { IndexedDbStorage } from "@abh/core/storage/indexeddb";
-import { useAbh } from "@abh/ui";
+import { ThemeProvider, useAbh } from "@abh/ui";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
@@ -12,6 +12,10 @@ void useAbh.getState().init(store);
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <ThemeProvider>
+      {/* Calm ambient backdrop so the glass has something to blur. */}
+      <div className="abh-ambient" aria-hidden />
+      <App />
+    </ThemeProvider>
   </React.StrictMode>,
 );

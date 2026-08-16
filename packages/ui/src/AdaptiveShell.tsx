@@ -2,16 +2,17 @@
 
 /**
  * AdaptiveShell — one nav that becomes the right thing at every size:
- *   compact  → bottom navigation bar
+ *   compact  → bottom navigation bar (glass)
  *   medium   → left navigation rail (foldable unfolded / small tablet)
  *   expanded → permanent left sidebar (tablet / iPad / desktop)
  *
- * The Flutter app mirrors this exact bottom-nav ↔ rail ↔ sidebar progression.
+ * All colours come from theme tokens, and the nav is a frosted-glass surface,
+ * so it follows light/dark automatically. The Flutter app mirrors this exact
+ * bottom-nav ↔ rail ↔ sidebar progression.
  */
 
-import type { ReactNode } from "react";
+import type { CSSProperties, ReactNode } from "react";
 import { useBreakpoint } from "./breakpoints.js";
-import { color } from "./theme.js";
 
 export interface NavItem {
   id: string;
@@ -24,10 +25,15 @@ interface Props {
   activeId: string;
   onSelect: (id: string) => void;
   brand?: ReactNode;
-  /** Rendered at the foot of the rail/sidebar and inline on compact (e.g. Ask). */
   action?: ReactNode;
   children: ReactNode;
 }
+
+const glass: CSSProperties = {
+  background: "var(--glass-bg)",
+  WebkitBackdropFilter: "saturate(180%) blur(var(--glass-blur))",
+  backdropFilter: "saturate(180%) blur(var(--glass-blur))",
+};
 
 export function AdaptiveShell({ items, activeId, onSelect, brand, action, children }: Props) {
   const size = useBreakpoint();
@@ -36,25 +42,20 @@ export function AdaptiveShell({ items, activeId, onSelect, brand, action, childr
 
   if (compact) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100dvh", background: color.forest950, color: color.parchment }}>
+      <div style={{ display: "flex", flexDirection: "column", height: "100dvh", color: "var(--fg)" }}>
         <div style={{ flex: 1, minHeight: 0, position: "relative" }}>{children}</div>
-        <nav
-          style={{
-            display: "flex", borderTop: `1px solid ${color.forest800}`,
-            background: color.forest950, paddingBottom: "env(safe-area-inset-bottom)",
-          }}
-        >
+        <nav style={{ ...glass, display: "flex", borderTop: "1px solid var(--glass-border)", paddingBottom: "env(safe-area-inset-bottom)" }}>
           {items.map((it) => (
             <button
               key={it.id}
               onClick={() => onSelect(it.id)}
               style={{
-                flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-                gap: 3, padding: "8px 4px", border: "none", background: "none", cursor: "pointer",
-                color: it.id === activeId ? color.amber : color.forest300, fontSize: 11,
+                flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
+                padding: "8px 4px", border: "none", background: "none", cursor: "pointer",
+                color: it.id === activeId ? "var(--fg)" : "var(--fg-subtle)", fontSize: 11,
               }}
             >
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{it.icon}</span>
+              <span style={{ fontSize: 18, lineHeight: 1, opacity: it.id === activeId ? 1 : 0.7 }}>{it.icon}</span>
               {it.label}
             </button>
           ))}
@@ -63,16 +64,11 @@ export function AdaptiveShell({ items, activeId, onSelect, brand, action, childr
     );
   }
 
-  const railWidth = expanded ? 216 : 72;
+  const railWidth = expanded ? 216 : 74;
   return (
-    <div style={{ display: "flex", height: "100dvh", background: color.forest950, color: color.parchment }}>
-      <nav
-        style={{
-          width: railWidth, flexShrink: 0, display: "flex", flexDirection: "column",
-          borderRight: `1px solid ${color.forest800}`, padding: 10, gap: 4,
-        }}
-      >
-        {brand && <div style={{ padding: expanded ? "6px 8px 14px" : "6px 0 14px", display: "flex", justifyContent: expanded ? "flex-start" : "center" }}>{brand}</div>}
+    <div style={{ display: "flex", height: "100dvh", color: "var(--fg)" }}>
+      <nav style={{ ...glass, width: railWidth, flexShrink: 0, display: "flex", flexDirection: "column", borderRight: "1px solid var(--glass-border)", padding: 12, gap: 4 }}>
+        {brand && <div style={{ padding: expanded ? "6px 8px 16px" : "6px 0 16px", display: "flex", justifyContent: expanded ? "flex-start" : "center" }}>{brand}</div>}
         {items.map((it) => {
           const active = it.id === activeId;
           return (
@@ -81,20 +77,20 @@ export function AdaptiveShell({ items, activeId, onSelect, brand, action, childr
               onClick={() => onSelect(it.id)}
               title={it.label}
               style={{
-                display: "flex", alignItems: "center", gap: 10,
+                display: "flex", alignItems: "center", gap: 11,
                 justifyContent: expanded ? "flex-start" : "center",
-                padding: expanded ? "10px 12px" : "10px 0", borderRadius: 10, border: "none",
-                background: active ? color.forest800 : "transparent", cursor: "pointer",
-                color: active ? color.parchment : color.forest300, fontSize: 14, fontWeight: 500,
+                padding: expanded ? "10px 12px" : "11px 0", borderRadius: 12, border: "none",
+                background: active ? "var(--surface-2)" : "transparent", cursor: "pointer",
+                color: active ? "var(--fg)" : "var(--fg-muted)", fontSize: 14, fontWeight: 500,
                 width: "100%", textAlign: "left",
               }}
             >
-              <span style={{ fontSize: 18, lineHeight: 1 }}>{it.icon}</span>
+              <span style={{ fontSize: 18, lineHeight: 1, opacity: active ? 1 : 0.75 }}>{it.icon}</span>
               {expanded && <span>{it.label}</span>}
             </button>
           );
         })}
-        <div style={{ marginTop: "auto", display: "flex", justifyContent: expanded ? "stretch" : "center" }}>{action}</div>
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8, alignItems: expanded ? "stretch" : "center" }}>{action}</div>
       </nav>
       <main style={{ flex: 1, minWidth: 0, position: "relative" }}>{children}</main>
     </div>

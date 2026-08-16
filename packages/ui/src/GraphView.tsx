@@ -15,14 +15,18 @@ import FA2Layout from "graphology-layout-forceatlas2/worker";
 import { inferSettings } from "graphology-layout-forceatlas2";
 import { useEffect, useRef } from "react";
 import Sigma from "sigma";
-import { color } from "./theme.js";
+import { readThemeColors, type ThemeColors } from "./theme.js";
+import { useTheme } from "./ThemeProvider.js";
 
 export interface GraphNode {
   id: string;
   label: string;
+  /** Domain accent colour (stays across themes). */
   color: string;
   /** Ghost = an unaccepted AI suggestion sitting on the frontier. */
   ghost?: boolean;
+  /** Locked topics render in a neutral, theme-aware muted tone. */
+  locked?: boolean;
   /** Relative importance (degree); scales node size. */
   weight?: number;
 }
@@ -51,6 +55,23 @@ function topoKey(nodes: GraphNode[], links: GraphLink[]): string {
   );
 }
 
+/** Recolour node/edge fills from the current theme tokens (neutrals switch;
+ *  domain accents, stored per node, stay). */
+function paintGraph(graph: Graph, c: ThemeColors) {
+  graph.forEachNode((id, attr) => {
+    const col = attr.ghost ? c.ai : attr.locked ? c.locked : attr.dcolor;
+    graph.setNodeAttribute(id, "color", col);
+  });
+  graph.forEachEdge((id, attr) => {
+    graph.setEdgeAttribute(id, "color", attr.soft ? c.edgeSoft : c.edge);
+  });
+}
+
+function paintSigma(renderer: Sigma, c: ThemeColors) {
+  renderer.setSetting("labelColor", { color: c.label });
+  renderer.setSetting("defaultEdgeColor", c.edge);
+}
+
 export default function GraphView({
   nodes,
   links,
@@ -59,6 +80,7 @@ export default function GraphView({
   className,
   style,
 }: Props) {
+  const { resolved } = useTheme();
   const containerRef = useRef<HTMLDivElement>(null);
   const sigmaRef = useRef<Sigma | null>(null);
   const graphRef = useRef<Graph | null>(null);
@@ -67,6 +89,7 @@ export default function GraphView({
   const selectedRef = useRef<string | null>(selectedId ?? null);
   const nodesRef = useRef<GraphNode[]>(nodes);
   const onSelectRef = useRef(onSelect);
+  const colorsRef = useRef<ThemeColors>(readThemeColors());
 
   selectedRef.current = selectedId ?? null;
   nodesRef.current = nodes;
@@ -78,13 +101,14 @@ export default function GraphView({
     const graph = new Graph();
     graphRef.current = graph;
 
+    const c0 = colorsRef.current;
     const renderer = new Sigma(graph, containerRef.current, {
       allowInvalidContainer: true,
-      labelColor: { color: "#e7ecdf" },
+      labelColor: { color: c0.label },
       labelFont: "ui-sans-serif, system-ui, sans-serif",
       labelSize: 12,
       labelRenderedSizeThreshold: 0.1,
-      defaultEdgeColor: "rgba(116,198,157,0.18)",
+      defaultEdgeColor: c0.edge,
       stagePadding: 80,
       zIndex: true,
     });
@@ -98,7 +122,7 @@ export default function GraphView({
         const g = graphRef.current!;
         const near = node === focus || g.areNeighbors(focus, node);
         if (!near) {
-          res.color = "rgba(116,198,157,0.12)";
+          res.color = colorsRef.current.muted;
           res.label = "";
         }
       }
@@ -159,18 +183,22 @@ export default function GraphView({
         x: Math.cos(a) * 10 + Math.random(),
         y: Math.sin(a) * 10 + Math.random(),
         size: node.ghost ? 6 : 6 + Math.min(9, (node.weight ?? 0) * 1.4),
-        color: node.ghost ? color.violet : node.color,
+        color: node.color, // painted below from tokens
+        // Kept so a theme flip can recompute colours without a rebuild.
+        dcolor: node.color,
+        ghost: !!node.ghost,
+        locked: !!node.locked,
         zIndex: node.ghost ? 2 : 1,
       });
     });
     for (const l of links) {
       if (!graph.hasNode(l.source) || !graph.hasNode(l.target)) continue;
       if (graph.hasEdge(l.source, l.target)) continue;
-      graph.addEdge(l.source, l.target, {
-        color: l.soft ? "rgba(199,125,255,0.22)" : "rgba(116,198,157,0.18)",
-        size: 1,
-      });
+      graph.addEdge(l.source, l.target, { soft: !!l.soft, size: 1 });
     }
+    colorsRef.current = readThemeColors();
+    paintGraph(graph, colorsRef.current);
+    paintSigma(renderer, colorsRef.current);
 
     if (graph.order > 1) {
       const settings = inferSettings(graph);
@@ -194,6 +222,21 @@ export default function GraphView({
   useEffect(() => {
     sigmaRef.current?.refresh();
   }, [selectedId]);
+
+  // Recolour live when the theme flips (neutrals/labels/edges switch).
+  useEffect(() => {
+    const graph = graphRef.current;
+    const renderer = sigmaRef.current;
+    if (!graph || !renderer) return;
+    // Wait a frame so the CSS variables reflect the new theme before we read them.
+    const raf = requestAnimationFrame(() => {
+      colorsRef.current = readThemeColors();
+      paintGraph(graph, colorsRef.current);
+      paintSigma(renderer, colorsRef.current);
+      renderer.refresh();
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [resolved]);
 
   return (
     <div
