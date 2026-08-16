@@ -1,5 +1,6 @@
 "use client";
 
+import { Moon, Sun } from "lucide-react";
 import { useTheme } from "./ThemeProvider.js";
 
 /**
@@ -17,18 +18,16 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       style={{
         display: "grid",
         placeItems: "center",
-        width: 34,
-        height: 34,
+        width: 36,
+        height: 36,
         borderRadius: 10,
         border: "1px solid var(--hairline)",
         background: "transparent",
         color: "var(--fg-muted)",
         cursor: "pointer",
-        fontSize: 15,
-        lineHeight: 1,
       }}
     >
-      {resolved === "dark" ? "☀" : "☾"}
+      {resolved === "dark" ? <Sun size={17} strokeWidth={2} /> : <Moon size={17} strokeWidth={2} />}
     </button>
   );
 }

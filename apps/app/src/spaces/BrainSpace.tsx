@@ -1,4 +1,5 @@
 import { domainColor, GraphView, MasterDetail, STATUS, useAbh } from "@abh/ui";
+import { Brain } from "lucide-react";
 import { useMemo, useState } from "react";
 import { buildGraphData } from "../lib/graphData";
 
@@ -60,8 +61,8 @@ export function BrainSpace() {
       {nodes.length === 0 ? (
         <div className="grid h-full place-items-center px-6 text-center">
           <div>
-            <div className="text-4xl">🧠</div>
-            <h2 className="mt-3 text-xl font-semibold">Your brain is empty — for now</h2>
+            <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-ai/12 text-ai"><Brain size={30} strokeWidth={1.75} /></span>
+            <h2 className="mt-4 text-xl font-semibold">Your brain is empty — for now</h2>
             <p className="mx-auto mt-2 max-w-sm text-sm text-muted">Ask how something works, or start a roadmap. Everything you learn lands here and connects.</p>
           </div>
         </div>

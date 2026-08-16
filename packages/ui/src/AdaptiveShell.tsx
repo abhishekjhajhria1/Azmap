@@ -45,20 +45,23 @@ export function AdaptiveShell({ items, activeId, onSelect, brand, action, childr
       <div style={{ display: "flex", flexDirection: "column", height: "100dvh", color: "var(--fg)" }}>
         <div style={{ flex: 1, minHeight: 0, position: "relative" }}>{children}</div>
         <nav style={{ ...glass, display: "flex", borderTop: "1px solid var(--glass-border)", paddingBottom: "env(safe-area-inset-bottom)" }}>
-          {items.map((it) => (
-            <button
-              key={it.id}
-              onClick={() => onSelect(it.id)}
-              style={{
-                flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 3,
-                padding: "8px 4px", border: "none", background: "none", cursor: "pointer",
-                color: it.id === activeId ? "var(--fg)" : "var(--fg-subtle)", fontSize: 11,
-              }}
-            >
-              <span style={{ fontSize: 18, lineHeight: 1, opacity: it.id === activeId ? 1 : 0.7 }}>{it.icon}</span>
-              {it.label}
-            </button>
-          ))}
+          {items.map((it) => {
+            const active = it.id === activeId;
+            return (
+              <button
+                key={it.id}
+                onClick={() => onSelect(it.id)}
+                style={{
+                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+                  padding: "9px 4px 8px", border: "none", background: "none", cursor: "pointer",
+                  color: active ? "var(--fg)" : "var(--fg-subtle)", fontSize: 11, fontWeight: active ? 600 : 500,
+                }}
+              >
+                <span style={{ display: "grid", placeItems: "center", color: active ? "var(--accent)" : "inherit" }}>{it.icon}</span>
+                {it.label}
+              </button>
+            );
+          })}
         </nav>
       </div>
     );
@@ -80,12 +83,13 @@ export function AdaptiveShell({ items, activeId, onSelect, brand, action, childr
                 display: "flex", alignItems: "center", gap: 11,
                 justifyContent: expanded ? "flex-start" : "center",
                 padding: expanded ? "10px 12px" : "11px 0", borderRadius: 12, border: "none",
-                background: active ? "var(--surface-2)" : "transparent", cursor: "pointer",
-                color: active ? "var(--fg)" : "var(--fg-muted)", fontSize: 14, fontWeight: 500,
+                background: active ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "transparent",
+                cursor: "pointer",
+                color: active ? "var(--fg)" : "var(--fg-muted)", fontSize: 14, fontWeight: active ? 600 : 500,
                 width: "100%", textAlign: "left",
               }}
             >
-              <span style={{ fontSize: 18, lineHeight: 1, opacity: active ? 1 : 0.75 }}>{it.icon}</span>
+              <span style={{ display: "grid", placeItems: "center", color: active ? "var(--accent)" : "inherit" }}>{it.icon}</span>
               {expanded && <span>{it.label}</span>}
             </button>
           );

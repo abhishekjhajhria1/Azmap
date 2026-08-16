@@ -8,11 +8,20 @@
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
-    "./lite": { "types": "./dist/lite.d.ts", "import": "./dist/lite.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./lite": {
+      "types": "./dist/lite.d.ts",
+      "import": "./dist/lite.js"
+    },
     "./theme.css": "./theme.css"
   },
-  "files": ["dist", "theme.css"],
+  "files": [
+    "dist",
+    "theme.css"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
@@ -22,6 +31,7 @@
     "@abh/core": "workspace:*",
     "graphology": "^0.25.4",
     "graphology-layout-forceatlas2": "^0.10.1",
+    "lucide-react": "^1.31.0",
     "sigma": "^3.0.0",
     "zustand": "^5.0.2"
   },

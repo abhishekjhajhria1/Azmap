@@ -1,4 +1,5 @@
 import { AdaptiveShell, type NavItem, ThemeToggle, useAbh } from "@abh/ui";
+import { Brain, Compass, Inbox, Users } from "lucide-react";
 import { type ReactElement, useState } from "react";
 import { AskAnything } from "./AskAnything";
 import { Onboarding } from "./Onboarding";
@@ -10,11 +11,12 @@ import { RoadmapSpace } from "./spaces/RoadmapSpace";
 type SpaceId = "brain" | "roadmap" | "capture" | "guardian";
 
 // Spaces are a registry — adding a use case later is one entry + one component.
+const ICON = { size: 19, strokeWidth: 2 } as const;
 const SPACES: { item: NavItem; render: () => ReactElement }[] = [
-  { item: { id: "brain", label: "Brain", icon: "🧠" }, render: () => <BrainSpace /> },
-  { item: { id: "roadmap", label: "Roadmap", icon: "🧭" }, render: () => <RoadmapSpace /> },
-  { item: { id: "capture", label: "Capture", icon: "📥" }, render: () => <CaptureSpace /> },
-  { item: { id: "guardian", label: "Guardian", icon: "👥" }, render: () => <GuardianSpace /> },
+  { item: { id: "brain", label: "Brain", icon: <Brain {...ICON} /> }, render: () => <BrainSpace /> },
+  { item: { id: "roadmap", label: "Roadmap", icon: <Compass {...ICON} /> }, render: () => <RoadmapSpace /> },
+  { item: { id: "capture", label: "Capture", icon: <Inbox {...ICON} /> }, render: () => <CaptureSpace /> },
+  { item: { id: "guardian", label: "Guardian", icon: <Users {...ICON} /> }, render: () => <GuardianSpace /> },
 ];
 
 export function App() {

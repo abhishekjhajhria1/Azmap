@@ -1,4 +1,5 @@
 import { useAbh } from "@abh/ui";
+import { Brain, Compass } from "lucide-react";
 import { useState } from "react";
 
 /**
@@ -19,7 +20,7 @@ export function Onboarding({ onComplete }: { onComplete: (space: "roadmap" | "br
     <div className="grid min-h-[100dvh] place-items-center bg-bg px-5">
       <div className="w-full max-w-md">
         <div className="mb-8 flex items-center gap-2.5">
-          <span className="grid h-9 w-9 place-items-center rounded-xl bg-surface-2 text-lg font-bold">A</span>
+          <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent text-lg font-bold text-accent-ink">A</span>
           <span className="text-lg font-semibold">ABH</span>
         </div>
 
@@ -48,13 +49,19 @@ export function Onboarding({ onComplete }: { onComplete: (space: "roadmap" | "br
             <h1 className="text-2xl font-bold">Where do you want to begin, {name.trim() || "friend"}?</h1>
             <p className="mt-2 text-muted">You can always do both — everything you learn ends up on the same map.</p>
             <div className="mt-6 grid gap-3">
-              <button onClick={() => finish("roadmap")} className="glass rounded-2xl p-5 text-left transition hover:-translate-y-0.5 hover:border-accent">
-                <div className="text-lg font-semibold">🧭 Follow a roadmap</div>
-                <div className="mt-1 text-sm text-muted">Learn one thing, distraction-free. A focused path that reveals as you go.</div>
+              <button onClick={() => finish("roadmap")} className="group glass flex items-start gap-4 rounded-2xl p-5 text-left transition hover:-translate-y-0.5 hover:border-accent">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent"><Compass size={22} /></span>
+                <span>
+                  <span className="block text-lg font-semibold">Follow a roadmap</span>
+                  <span className="mt-1 block text-sm text-muted">Learn one thing, distraction-free. A focused path that reveals as you go.</span>
+                </span>
               </button>
-              <button onClick={() => finish("brain")} className="glass rounded-2xl p-5 text-left transition hover:-translate-y-0.5 hover:border-accent">
-                <div className="text-lg font-semibold">🧠 Open my mind map</div>
-                <div className="mt-1 text-sm text-muted">Your second brain — explore freely, ask anything, connect everything.</div>
+              <button onClick={() => finish("brain")} className="group glass flex items-start gap-4 rounded-2xl p-5 text-left transition hover:-translate-y-0.5 hover:border-accent">
+                <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-ai/15 text-ai"><Brain size={22} /></span>
+                <span>
+                  <span className="block text-lg font-semibold">Open my mind map</span>
+                  <span className="mt-1 block text-sm text-muted">Your second brain — explore freely, ask anything, connect everything.</span>
+                </span>
               </button>
             </div>
             <button onClick={() => setStep("name")} className="mt-4 text-sm text-subtle hover:text-fg">← back</button>
