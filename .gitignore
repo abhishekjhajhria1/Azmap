@@ -1,0 +1,45 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Builds / output
+dist/
+build/
+out/
+.next/
+.output/
+.wxt/
+.vite/
+*.tsbuildinfo
+
+# Env / secrets
+.env
+.env.local
+.env.*.local
+
+# Editor / OS
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# Test / coverage
+coverage/
+
+# Flutter (apps/mobile)
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/build/
+
+# Desktop (apps/desktop — Tauri/Rust)
+apps/desktop/target/
+apps/desktop/src-tauri/target/
+
+# Extension packaged artifacts
+apps/extension/.output/
+apps/extension/*.zip
