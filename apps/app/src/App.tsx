@@ -2,7 +2,7 @@ import { AdaptiveShell, type DockItem, type DockPosition, FloatingDock, ThemeTog
 import { Brain, Compass, Inbox, Users } from "lucide-react";
 import { type ReactElement, useState } from "react";
 import { ProgressBadge } from "./ProgressBadge";
-import { AskAnything } from "./AskAnything";
+import { OmniBar } from "./OmniBar";
 import { Onboarding } from "./Onboarding";
 import { BrainSpace } from "./spaces/BrainSpace";
 import { CaptureSpace } from "./spaces/CaptureSpace";
@@ -13,8 +13,14 @@ type SpaceId = "brain" | "roadmap" | "capture" | "guardian";
 
 // Spaces are a registry — adding a use case later is one entry + one component.
 const ICON = { size: 18, strokeWidth: 2 } as const;
-const SPACES: { item: DockItem; render: () => ReactElement }[] = [
-  { item: { id: "brain", label: "Brain", icon: <Brain {...ICON} /> }, render: () => <BrainSpace /> },
+
+interface SpaceProps {
+  focusTopicId?: string | null;
+  onFocusHandled?: () => void;
+}
+
+const SPACES: { item: DockItem; render: (p: SpaceProps) => ReactElement }[] = [
+  { item: { id: "brain", label: "Brain", icon: <Brain {...ICON} /> }, render: (p) => <BrainSpace {...p} /> },
   { item: { id: "roadmap", label: "Roadmap", icon: <Compass {...ICON} /> }, render: () => <RoadmapSpace /> },
   { item: { id: "capture", label: "Capture", icon: <Inbox {...ICON} /> }, render: () => <CaptureSpace /> },
   { item: { id: "guardian", label: "Guardian", icon: <Users {...ICON} /> }, render: () => <GuardianSpace /> },
@@ -24,6 +30,9 @@ export function App() {
   const ready = useAbh((s) => s.ready);
   const profile = useAbh((s) => s.profile);
   const [space, setSpace] = useState<SpaceId>("brain");
+  // Set when the omni-bar jumps straight to a topic, so the Brain space can
+  // open its inspector on arrival.
+  const [focusTopicId, setFocusTopicId] = useState<string | null>(null);
 
   if (!ready) {
     return <div className="grid h-[100dvh] place-items-center text-subtle">Loading your map…</div>;
@@ -40,7 +49,9 @@ export function App() {
   return (
     <>
       <AdaptiveShell dockPosition={dockPosition}>
-        <div className="h-full">{active.render()}</div>
+        <div className="h-full">
+          {active.render({ focusTopicId, onFocusHandled: () => setFocusTopicId(null) })}
+        </div>
       </AdaptiveShell>
 
       <FloatingDock
@@ -61,7 +72,10 @@ export function App() {
         }
       />
 
-      <AskAnything />
+      <OmniBar
+        onGoToSpace={(id) => setSpace(id as SpaceId)}
+        onSelectTopic={(id) => setFocusTopicId(id)}
+      />
     </>
   );
 }

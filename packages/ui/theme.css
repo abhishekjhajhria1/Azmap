@@ -1,10 +1,11 @@
 /**
  * ABH design tokens — one semantic system, switched light/dark.
  *
- * Neutral graphite/white base with the brand (green/amber/violet) kept as
- * accents only. Elevated surfaces use the `.glass` material; content stays
- * clean. Tokens are consumed by Tailwind (via CSS-var colours), by @abh/ui's
- * inline styles, and by the graph (read at runtime).
+ * A near-monochrome neutral base (no beige/cream — those read institutional)
+ * with ONE vivid accent, iOS blue, spent sparingly. Green and violet are
+ * semantic only: known/success and AI. Elevated surfaces use `.glass`/`.float`;
+ * content stays clean. Tokens are consumed by Tailwind (via CSS-var colours),
+ * by @abh/ui's inline styles, and by the graph (read at runtime).
  *
  * Theme resolution:
  *   :root                          → light
@@ -15,43 +16,45 @@
 :root {
   color-scheme: light;
 
-  --bg: #f4f6f8;
-  --ambient-1: rgba(64, 145, 108, 0.10);
-  --ambient-2: rgba(199, 125, 255, 0.08);
-  --ambient-3: rgba(233, 185, 73, 0.08);
+  /* True neutrals. No beige, no cream — those read as institutional. */
+  --bg: #fbfbfd;
+  --ambient-1: rgba(10, 132, 255, 0.07);
+  --ambient-2: rgba(124, 92, 255, 0.06);
+  --ambient-3: rgba(10, 132, 255, 0.04);
 
   --surface: #ffffff;
-  --surface-2: #eceff2;
+  --surface-2: #f1f2f4;
 
-  --glass-bg: rgba(255, 255, 255, 0.62);
-  --glass-border: rgba(15, 23, 30, 0.08);
-  --glass-shadow: 0 10px 34px rgba(15, 23, 30, 0.10);
-  --glass-blur: 20px;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(0, 0, 0, 0.07);
+  --glass-shadow: 0 10px 34px rgba(0, 0, 0, 0.08);
+  --glass-blur: 24px;
 
-  --fg: #10171c;
-  --fg-muted: #4c565d;
-  --fg-subtle: #8b959c;
-  --hairline: rgba(15, 23, 30, 0.09);
+  --fg: #09090b;
+  --fg-muted: #62636a;
+  --fg-subtle: #9a9ba2;
+  --hairline: rgba(0, 0, 0, 0.08);
 
-  --accent: #e0a92e;          /* primary action fill (amber), dark ink on top */
-  --accent-contrast: #1b1300;
-  --known: #2d7d5a;           /* green, legible as text on light */
-  --available: #c68a1e;
-  --ai: #8b3ffb;              /* violet */
-  --ring: rgba(224, 169, 46, 0.45);
+  /* One vivid accent, used sparingly — iOS blue, not mustard. */
+  --accent: #0071e3;
+  --accent-contrast: #ffffff;
+  --known: #1a9f57;           /* semantic success only */
+  --available: #0071e3;
+  --ai: #7c5cff;              /* violet, reserved for AI */
+  --ring: rgba(0, 113, 227, 0.4);
 
-  --graph-label: #26313a;
-  --graph-edge: rgba(15, 23, 30, 0.16);
-  --graph-edge-soft: rgba(139, 63, 251, 0.28);
-  --graph-muted: rgba(15, 23, 30, 0.10);
-  --graph-locked: #cdd4d9;
+  --graph-label: #35363c;
+  --graph-edge: rgba(0, 0, 0, 0.13);
+  --graph-edge-soft: rgba(124, 92, 255, 0.26);
+  --graph-muted: rgba(0, 0, 0, 0.08);
+  --graph-locked: #d6d7db;
 
   /* Elevation — depth from light, never from outlines. */
-  --e1: 0 1px 2px rgba(15, 23, 30, 0.05), 0 1px 1px rgba(15, 23, 30, 0.03);
-  --e2: 0 4px 12px rgba(15, 23, 30, 0.07), 0 1px 3px rgba(15, 23, 30, 0.04);
-  --e3: 0 16px 40px rgba(15, 23, 30, 0.11), 0 2px 8px rgba(15, 23, 30, 0.05);
+  --e1: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 1px rgba(0, 0, 0, 0.03);
+  --e2: 0 4px 14px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.04);
+  --e3: 0 18px 44px rgba(0, 0, 0, 0.10), 0 2px 8px rgba(0, 0, 0, 0.05);
   /* A hairline that reads as a seam, not a box. */
-  --seam: rgba(15, 23, 30, 0.07);
+  --seam: rgba(0, 0, 0, 0.06);
 }
 
 /* Radii — nothing in this product is sharp-cornered. */
@@ -82,82 +85,82 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --bg: #0b0e10;
-    --ambient-1: rgba(82, 183, 136, 0.10);
-    --ambient-2: rgba(199, 125, 255, 0.10);
-    --ambient-3: rgba(233, 185, 73, 0.07);
+    --bg: #09090b;
+    --ambient-1: rgba(10, 132, 255, 0.10);
+    --ambient-2: rgba(124, 92, 255, 0.09);
+    --ambient-3: rgba(10, 132, 255, 0.05);
 
-    --surface: #15191d;
-    --surface-2: #1c2126;
+    --surface: #141417;
+    --surface-2: #1e1e22;
 
-    --glass-bg: rgba(24, 29, 34, 0.55);
-    --glass-border: rgba(255, 255, 255, 0.09);
-    --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-    --glass-blur: 22px;
+    --glass-bg: rgba(22, 22, 26, 0.68);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    --glass-blur: 24px;
 
-    --fg: #f1f4f6;
-    --fg-muted: #a6afb5;
-    --fg-subtle: #6a747b;
-    --hairline: rgba(255, 255, 255, 0.09);
+    --fg: #fafafa;
+    --fg-muted: #a1a1aa;
+    --fg-subtle: #6b6b73;
+    --hairline: rgba(255, 255, 255, 0.08);
 
-    --accent: #e9b949;
-    --accent-contrast: #0b0e10;
-    --known: #52b788;
-    --available: #e9b949;
-    --ai: #c77dff;
-    --ring: rgba(233, 185, 73, 0.5);
+    --accent: #0a84ff;
+    --accent-contrast: #ffffff;
+    --known: #30d158;
+    --available: #0a84ff;
+    --ai: #a78bfa;
+    --ring: rgba(10, 132, 255, 0.5);
 
-    --graph-label: #e7ecef;
-    --graph-edge: rgba(116, 198, 157, 0.18);
-    --graph-edge-soft: rgba(199, 125, 255, 0.24);
-    --graph-muted: rgba(116, 198, 157, 0.12);
-    --graph-locked: #1b3a2b;
+    --graph-label: #e6e6ea;
+    --graph-edge: rgba(255, 255, 255, 0.13);
+    --graph-edge-soft: rgba(167, 139, 250, 0.28);
+    --graph-muted: rgba(255, 255, 255, 0.07);
+    --graph-locked: #2a2a30;
 
-    --e1: 0 1px 2px rgba(0, 0, 0, 0.4);
-    --e2: 0 6px 16px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
-    --e3: 0 20px 48px rgba(0, 0, 0, 0.6), 0 2px 10px rgba(0, 0, 0, 0.4);
-    --seam: rgba(255, 255, 255, 0.07);
+    --e1: 0 1px 2px rgba(0, 0, 0, 0.5);
+    --e2: 0 6px 18px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+    --e3: 0 20px 50px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.45);
+    --seam: rgba(255, 255, 255, 0.06);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #0b0e10;
-  --ambient-1: rgba(82, 183, 136, 0.10);
-  --ambient-2: rgba(199, 125, 255, 0.10);
-  --ambient-3: rgba(233, 185, 73, 0.07);
+  --bg: #09090b;
+  --ambient-1: rgba(10, 132, 255, 0.10);
+  --ambient-2: rgba(124, 92, 255, 0.09);
+  --ambient-3: rgba(10, 132, 255, 0.05);
 
-  --surface: #15191d;
-  --surface-2: #1c2126;
+  --surface: #141417;
+  --surface-2: #1e1e22;
 
-  --glass-bg: rgba(24, 29, 34, 0.55);
-  --glass-border: rgba(255, 255, 255, 0.09);
-  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
-  --glass-blur: 22px;
+  --glass-bg: rgba(22, 22, 26, 0.68);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --glass-blur: 24px;
 
-  --fg: #f1f4f6;
-  --fg-muted: #a6afb5;
-  --fg-subtle: #6a747b;
-  --hairline: rgba(255, 255, 255, 0.09);
+  --fg: #fafafa;
+  --fg-muted: #a1a1aa;
+  --fg-subtle: #6b6b73;
+  --hairline: rgba(255, 255, 255, 0.08);
 
-  --accent: #e9b949;
-  --accent-contrast: #0b0e10;
-  --known: #52b788;
-  --available: #e9b949;
-  --ai: #c77dff;
-  --ring: rgba(233, 185, 73, 0.5);
+  --accent: #0a84ff;
+  --accent-contrast: #ffffff;
+  --known: #30d158;
+  --available: #0a84ff;
+  --ai: #a78bfa;
+  --ring: rgba(10, 132, 255, 0.5);
 
-  --graph-label: #e7ecef;
-  --graph-edge: rgba(116, 198, 157, 0.18);
-  --graph-edge-soft: rgba(199, 125, 255, 0.24);
-  --graph-muted: rgba(116, 198, 157, 0.12);
-  --graph-locked: #1b3a2b;
+  --graph-label: #e6e6ea;
+  --graph-edge: rgba(255, 255, 255, 0.13);
+  --graph-edge-soft: rgba(167, 139, 250, 0.28);
+  --graph-muted: rgba(255, 255, 255, 0.07);
+  --graph-locked: #2a2a30;
 
-  --e1: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --e2: 0 6px 16px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
-  --e3: 0 20px 48px rgba(0, 0, 0, 0.6), 0 2px 10px rgba(0, 0, 0, 0.4);
-  --seam: rgba(255, 255, 255, 0.07);
+  --e1: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --e2: 0 6px 18px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --e3: 0 20px 50px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.45);
+  --seam: rgba(255, 255, 255, 0.06);
 }
 
 /* Theme-flip smoothing — scoped to the few surfaces that actually change,

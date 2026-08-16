@@ -9,26 +9,30 @@
 
 import type { MapStatus } from "@abh/core";
 
-/** Node colour per domain — brand accents, legible in both themes. */
+/**
+ * Node colour per domain — a restrained, modern spectrum. Cool-leaning and
+ * evenly saturated so no single domain shouts, and every hue stays legible on
+ * both the near-white and near-black canvases.
+ */
 export const DOMAIN_COLOR: Record<string, string> = {
-  web: "#5ea0e9",
-  css: "#5bbfce",
-  js: "#e0a92e",
-  react: "#43b284",
-  tooling: "#a970ff",
-  math: "#43b284",
-  ml: "#e0a92e",
-  dl: "#a970ff",
-  music: "#e08a6a",
-  theory: "#5bbfce",
-  practice: "#43b284",
-  physics: "#5ea0e9",
-  bio: "#43b284",
-  tech: "#e0a92e",
-  econ: "#e08a6a",
-  space: "#a970ff",
-  earth: "#5bbfce",
-  everyday: "#d6a94a",
+  web: "#0a84ff",
+  css: "#32ade6",
+  js: "#ffb020",
+  react: "#30c8a0",
+  tooling: "#a78bfa",
+  math: "#30c8a0",
+  ml: "#ffb020",
+  dl: "#a78bfa",
+  music: "#ff7a66",
+  theory: "#32ade6",
+  practice: "#30c8a0",
+  physics: "#0a84ff",
+  bio: "#30c8a0",
+  tech: "#ffb020",
+  econ: "#ff7a66",
+  space: "#a78bfa",
+  earth: "#32ade6",
+  everyday: "#8e8e93",
 };
 
 export function domainColor(domain: string | undefined): string {

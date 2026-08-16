@@ -42,6 +42,12 @@ interface Props {
   links: GraphLink[];
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+  /** Live search: matching nodes stay lit, everything else dims. */
+  query?: string;
+  /** Bumping this number re-frames the camera on the whole graph. */
+  fitToken?: number;
+  /** Bumping this zooms in (+1) or out (-1) relative to the last value. */
+  zoomToken?: number;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -77,6 +83,9 @@ export default function GraphView({
   links,
   selectedId,
   onSelect,
+  query,
+  fitToken,
+  zoomToken,
   className,
   style,
 }: Props) {
@@ -90,7 +99,9 @@ export default function GraphView({
   const nodesRef = useRef<GraphNode[]>(nodes);
   const onSelectRef = useRef(onSelect);
   const colorsRef = useRef<ThemeColors>(readThemeColors());
+  const queryRef = useRef<string>("");
 
+  queryRef.current = (query ?? "").trim().toLowerCase();
   selectedRef.current = selectedId ?? null;
   nodesRef.current = nodes;
   onSelectRef.current = onSelect;
@@ -117,6 +128,20 @@ export default function GraphView({
     // Dynamic styling: focus a node's neighbourhood, dim the rest (Obsidian-style).
     renderer.setSetting("nodeReducer", (node, data) => {
       const res = { ...data } as Record<string, unknown> & { hidden?: boolean };
+
+      // Live search wins over hover-focus: matches stay lit, the rest recede.
+      const q = queryRef.current;
+      if (q) {
+        const label = String((data as { label?: string }).label ?? "").toLowerCase();
+        if (!label.includes(q)) {
+          res.color = colorsRef.current.muted;
+          res.label = "";
+        } else {
+          res.highlighted = true;
+        }
+        return res;
+      }
+
       const focus = hoverRef.current ?? selectedRef.current;
       if (focus) {
         const g = graphRef.current!;
@@ -218,10 +243,28 @@ export default function GraphView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  // Reflect external selection changes without rebuilding.
+  // Reflect external selection / search changes without rebuilding the graph.
   useEffect(() => {
     sigmaRef.current?.refresh();
-  }, [selectedId]);
+  }, [selectedId, query]);
+
+  // Camera: frame the whole graph.
+  useEffect(() => {
+    if (fitToken == null) return;
+    sigmaRef.current?.getCamera().animatedReset();
+  }, [fitToken]);
+
+  // Camera: step zoom. The sign of the change decides the direction.
+  const lastZoom = useRef<number | undefined>(zoomToken);
+  useEffect(() => {
+    if (zoomToken == null) return;
+    const prev = lastZoom.current ?? zoomToken;
+    lastZoom.current = zoomToken;
+    const cam = sigmaRef.current?.getCamera();
+    if (!cam || zoomToken === prev) return;
+    if (zoomToken > prev) cam.animatedZoom({ duration: 220 });
+    else cam.animatedUnzoom({ duration: 220 });
+  }, [zoomToken]);
 
   // Recolour live when the theme flips (neutrals/labels/edges switch).
   useEffect(() => {

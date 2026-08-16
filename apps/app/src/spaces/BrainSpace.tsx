@@ -1,6 +1,6 @@
 import { domainColor, GraphView, MasterDetail, STATUS, useAbh } from "@abh/ui";
-import { Brain, Check, Plus, Sparkles } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Brain, Check, Maximize2, Plus, Search, Sparkles, X, ZoomIn, ZoomOut } from "lucide-react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useCelebrate } from "../Celebration";
 import { buildGraphData } from "../lib/graphData";
 
@@ -8,13 +8,26 @@ import { buildGraphData } from "../lib/graphData";
  * The Mind Map / second brain — the superset. Everything you've learned,
  * explored, asked, or captured, in one graph. Rich and explorable.
  */
-export function BrainSpace() {
+export function BrainSpace({ focusTopicId, onFocusHandled }: {
+  focusTopicId?: string | null;
+  onFocusHandled?: () => void;
+} = {}) {
   const { topics, edges, statuses, proposals } = useAbh();
   const complete = useAbh((s) => s.complete);
   const setProgress = useAbh((s) => s.setProgress);
   const acceptProposal = useAbh((s) => s.acceptProposal);
   const celebrate = useCelebrate();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
+  const [fitToken, setFitToken] = useState(0);
+  const [zoomToken, setZoomToken] = useState(0);
+
+  // The omni-bar can jump straight to a topic; open its inspector on arrival.
+  useEffect(() => {
+    if (!focusTopicId) return;
+    setSelectedId(focusTopicId);
+    onFocusHandled?.();
+  }, [focusTopicId, onFocusHandled]);
 
   // Completing a topic is the payoff moment — always show what it opened.
   async function completeAndCelebrate(id: string) {
@@ -89,6 +102,10 @@ export function BrainSpace() {
     </div>
   );
 
+  const matches = query.trim()
+    ? topics.filter((t) => t.title.toLowerCase().includes(query.trim().toLowerCase())).length
+    : null;
+
   const master = (
     <div className="absolute inset-0">
       <div className="bg-grid absolute inset-0 opacity-40" />
@@ -101,13 +118,61 @@ export function BrainSpace() {
           </div>
         </div>
       ) : (
-        <GraphView nodes={nodes} links={links} selectedId={selectedId} onSelect={setSelectedId} className="absolute inset-0 h-full w-full" />
+        <GraphView
+          nodes={nodes} links={links} selectedId={selectedId} onSelect={setSelectedId}
+          query={query} fitToken={fitToken} zoomToken={zoomToken}
+          className="absolute inset-0 h-full w-full"
+        />
       )}
-      <div className="glass pointer-events-none absolute left-3 top-3 rounded-lg px-3 py-1.5 text-[11px] text-subtle">Your second brain · {topics.length} topics</div>
+
+      {/* Floating on-canvas controls — search and camera without leaving the map. */}
+      {nodes.length > 0 && (
+        <div
+          className="absolute flex items-center gap-2"
+          style={{ left: "var(--float-inset)", bottom: "calc(var(--float-inset) + env(safe-area-inset-bottom, 0px))" }}
+        >
+          <div className="float float--pill flex items-center gap-2 px-3.5 py-2.5">
+            <Search size={15} className="shrink-0 text-subtle" />
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Find on your map…"
+              className="w-36 min-w-0 bg-transparent text-[13px] outline-none placeholder:text-subtle sm:w-52"
+            />
+            {query && (
+              <>
+                <span className="t-foot shrink-0 tabular-nums text-subtle">{matches}</span>
+                <button onClick={() => setQuery("")} className="shrink-0 text-subtle hover:text-fg" aria-label="Clear search">
+                  <X size={14} />
+                </button>
+              </>
+            )}
+          </div>
+
+          <div className="float float--pill flex items-center gap-0.5 p-1.5">
+            <CtlBtn label="Zoom in" onClick={() => setZoomToken((z) => z + 1)}><ZoomIn size={16} /></CtlBtn>
+            <CtlBtn label="Zoom out" onClick={() => setZoomToken((z) => z - 1)}><ZoomOut size={16} /></CtlBtn>
+            <CtlBtn label="Fit to screen" onClick={() => setFitToken((f) => f + 1)}><Maximize2 size={15} /></CtlBtn>
+          </div>
+        </div>
+      )}
     </div>
   );
 
   return <MasterDetail master={master} detail={inspector} detailOpen={selectedId != null} onCloseDetail={() => setSelectedId(null)} />;
+}
+
+function CtlBtn({ label, onClick, children }: { label: string; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      className="pressable grid h-9 w-9 place-items-center rounded-full text-muted transition-colors hover:bg-[color-mix(in_srgb,var(--fg)_7%,transparent)] hover:text-fg"
+    >
+      {children}
+    </button>
+  );
 }
 
 function Rel({ title, ids, title2, onSel }: { title: string; ids: string[]; title2: (id: string) => string; onSel: (id: string) => void }) {
