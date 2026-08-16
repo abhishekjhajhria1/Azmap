@@ -1,0 +1,28 @@
+{
+  "name": "@abh/extension",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ABH browser extension — capture what you read on the web, straight into your map.",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "prepare": "wxt prepare",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@abh/core": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.0.7",
+    "@types/react-dom": "^19.0.3",
+    "@wxt-dev/module-react": "^1.1.3",
+    "typescript": "^5.6.3",
+    "wxt": "^0.19.29"
+  }
+}

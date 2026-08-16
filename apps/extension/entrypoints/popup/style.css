@@ -1,0 +1,201 @@
+:root {
+  --forest-950: #0a1a12;
+  --forest-900: #0e2419;
+  --forest-800: #123021;
+  --forest-700: #1b4332;
+  --forest-600: #2d6a4f;
+  --forest-300: #74c69d;
+  --parchment: #f4f1e8;
+  --amber: #e9b949;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+}
+
+body {
+  width: 360px;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--forest-950);
+  color: var(--parchment);
+}
+
+.app {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.loading,
+.empty {
+  padding: 20px 4px;
+  color: var(--forest-300);
+  font-size: 13px;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 16px;
+}
+
+.logo {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--forest-600);
+  font-size: 14px;
+}
+
+.progress {
+  font-size: 12px;
+  color: var(--forest-300);
+}
+
+.save-btn {
+  width: 100%;
+  padding: 10px;
+  border: none;
+  border-radius: 9px;
+  background: var(--amber);
+  color: var(--forest-950);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.save-btn:hover {
+  filter: brightness(1.06);
+}
+
+.section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--amber);
+  margin-bottom: 8px;
+}
+
+.card {
+  border: 1px solid var(--forest-700);
+  background: rgba(18, 48, 33, 0.5);
+  border-radius: 10px;
+  padding: 11px 12px;
+  margin-bottom: 8px;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.card-sub {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--forest-300);
+}
+
+.suggestion {
+  border-color: rgba(233, 185, 73, 0.4);
+  background: rgba(233, 185, 73, 0.06);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+button {
+  cursor: pointer;
+  border-radius: 7px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  padding: 7px 12px;
+}
+
+.accept,
+.done {
+  background: var(--forest-600);
+  color: var(--parchment);
+}
+.accept:hover,
+.done:hover {
+  background: var(--forest-700);
+}
+
+.reject {
+  background: transparent;
+  color: var(--forest-300);
+  border: 1px solid var(--forest-700);
+}
+
+.done {
+  margin-top: 9px;
+}
+
+.add-row input {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 7px;
+  border: 1px solid var(--forest-700);
+  background: var(--forest-950);
+  color: var(--parchment);
+  font-size: 13px;
+  outline: none;
+}
+.add-row input:focus {
+  border-color: var(--amber);
+}
+.add {
+  background: var(--forest-700);
+  color: var(--parchment);
+}
+
+.capture {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--forest-800);
+  text-decoration: none;
+  color: var(--parchment);
+  font-size: 12px;
+}
+.capture:hover {
+  color: var(--amber);
+}
+.capture-kind {
+  flex-shrink: 0;
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--forest-300);
+  border: 1px solid var(--forest-700);
+  border-radius: 5px;
+  padding: 1px 5px;
+}
+.capture-title {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer {
+  text-align: center;
+  font-size: 11px;
+  color: var(--forest-600);
+  padding-top: 4px;
+}

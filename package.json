@@ -1,0 +1,29 @@
+{
+  "name": "abh",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ABH — everything you learn, on one map that grows with you.",
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm -r --parallel dev",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "lint": "pnpm -r lint",
+    "core:build": "pnpm --filter @abh/core build",
+    "core:test": "pnpm --filter @abh/core test",
+    "web:dev": "pnpm --filter @abh/website dev",
+    "ext:dev": "pnpm --filter @abh/extension dev"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "pnpm": {
+    "overrides": {
+      "@vitejs/plugin-react": "4.3.4"
+    }
+  }
+}

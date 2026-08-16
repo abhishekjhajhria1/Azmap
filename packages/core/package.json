@@ -1,0 +1,36 @@
+{
+  "name": "@abh/core",
+  "version": "0.0.0",
+  "description": "The ABH map: the graph/roadmap domain model, unlock engine, and local-first storage. Framework-agnostic, shared by every app.",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./storage/indexeddb": {
+      "types": "./dist/storage/indexeddb.d.ts",
+      "import": "./dist/storage/indexeddb.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "dev": "tsc -p tsconfig.json --watch",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "idb": "^8.0.0",
+    "nanoid": "^5.0.7",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vitest": "^2.1.4"
+  }
+}
