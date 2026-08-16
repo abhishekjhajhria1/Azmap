@@ -40,10 +40,10 @@ export default function Home() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div className="animate-fade-up">
               <Eyebrow>The learning map</Eyebrow>
-              <h1 className="text-balance text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+              <h1 className="text-balance text-[40px] font-bold leading-[1.03] tracking-[-0.032em] sm:text-[52px] lg:text-[62px]">
                 Everything you learn, on one map that grows with you.
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
+              <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-muted">
                 Name anything you want to learn and get a real path through it —
                 or let AI build one for a subject nobody has mapped yet. Every
                 step you finish opens the next. And the people who matter can see

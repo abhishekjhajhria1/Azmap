@@ -45,6 +45,27 @@
   --graph-edge-soft: rgba(139, 63, 251, 0.28);
   --graph-muted: rgba(15, 23, 30, 0.10);
   --graph-locked: #cdd4d9;
+
+  /* Elevation — depth from light, never from outlines. */
+  --e1: 0 1px 2px rgba(15, 23, 30, 0.05), 0 1px 1px rgba(15, 23, 30, 0.03);
+  --e2: 0 4px 12px rgba(15, 23, 30, 0.07), 0 1px 3px rgba(15, 23, 30, 0.04);
+  --e3: 0 16px 40px rgba(15, 23, 30, 0.11), 0 2px 8px rgba(15, 23, 30, 0.05);
+  /* A hairline that reads as a seam, not a box. */
+  --seam: rgba(15, 23, 30, 0.07);
+}
+
+/* Type scale — one ratio, dramatic jumps, optical tracking.
+   Small text never gets negative tracking; display text always does. */
+:root {
+  --t-caption: 11px;
+  --t-footnote: 12.5px;
+  --t-body: 15px;
+  --t-headline: 17px;
+  --t-title3: 20px;
+  --t-title2: 24px;
+  --t-title1: 30px;
+  --t-display: 40px;
+  --t-hero: 56px;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -81,6 +102,11 @@
     --graph-edge-soft: rgba(199, 125, 255, 0.24);
     --graph-muted: rgba(116, 198, 157, 0.12);
     --graph-locked: #1b3a2b;
+
+    --e1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --e2: 0 6px 16px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+    --e3: 0 20px 48px rgba(0, 0, 0, 0.6), 0 2px 10px rgba(0, 0, 0, 0.4);
+    --seam: rgba(255, 255, 255, 0.07);
   }
 }
 
@@ -117,6 +143,11 @@
   --graph-edge-soft: rgba(199, 125, 255, 0.24);
   --graph-muted: rgba(116, 198, 157, 0.12);
   --graph-locked: #1b3a2b;
+
+  --e1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --e2: 0 6px 16px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.3);
+  --e3: 0 20px 48px rgba(0, 0, 0, 0.6), 0 2px 10px rgba(0, 0, 0, 0.4);
+  --seam: rgba(255, 255, 255, 0.07);
 }
 
 /* Smooth the flip between themes (but never animate layout). */
@@ -125,6 +156,72 @@
   transition-property: background-color, border-color, color, box-shadow, fill, stroke;
   transition-duration: 220ms;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ---- Craft primitives -------------------------------------------------
+   Hierarchy comes from type, space and light — not from outlining boxes. */
+
+/* Display type: big, tight, confident. Never on small text. */
+.t-hero    { font-size: var(--t-hero);    line-height: 1.02; letter-spacing: -0.03em;  font-weight: 680; }
+.t-display { font-size: var(--t-display); line-height: 1.06; letter-spacing: -0.028em; font-weight: 680; }
+.t-title1  { font-size: var(--t-title1);  line-height: 1.12; letter-spacing: -0.024em; font-weight: 660; }
+.t-title2  { font-size: var(--t-title2);  line-height: 1.18; letter-spacing: -0.019em; font-weight: 650; }
+.t-title3  { font-size: var(--t-title3);  line-height: 1.25; letter-spacing: -0.014em; font-weight: 640; }
+.t-headline{ font-size: var(--t-headline);line-height: 1.35; letter-spacing: -0.011em; font-weight: 620; }
+.t-body    { font-size: var(--t-body);    line-height: 1.55; letter-spacing: -0.008em; font-weight: 420; }
+.t-foot    { font-size: var(--t-footnote);line-height: 1.45; font-weight: 450; }
+/* Eyebrow: the only place uppercase + positive tracking belongs. */
+.t-eyebrow {
+  font-size: var(--t-caption); font-weight: 620;
+  text-transform: uppercase; letter-spacing: 0.13em;
+}
+
+/* A surface that sits ON the page — depth from light, one hairline seam. */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--seam);
+  border-radius: 18px;
+  box-shadow: var(--e2);
+}
+
+/* iOS-style grouped list: one container, hairline seams between rows,
+   NO border per row. Replaces stacks of individually-outlined boxes. */
+.group {
+  background: var(--surface);
+  border: 1px solid var(--seam);
+  border-radius: 18px;
+  box-shadow: var(--e1);
+  overflow: hidden;
+}
+.group > * + * {
+  border-top: 1px solid var(--seam);
+}
+.row-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 13px 16px;
+  background: transparent;
+  border: none;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+  transition: background 140ms ease;
+}
+.row-btn:hover { background: color-mix(in srgb, var(--fg) 4%, transparent); }
+.row-btn:active { background: color-mix(in srgb, var(--fg) 7%, transparent); }
+
+/* Pressable: the physical feedback every control should have. */
+.pressable { transition: transform 120ms cubic-bezier(.4,0,.2,1), filter 140ms ease; }
+.pressable:active { transform: scale(0.975); }
+
+/* Focus that looks designed, not like a browser default. */
+:where(button, a, input, [tabindex]):focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 8px;
 }
 
 /* The frosted-glass material — for elevated/floating surfaces only. */

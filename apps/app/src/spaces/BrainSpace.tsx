@@ -1,5 +1,5 @@
 import { domainColor, GraphView, MasterDetail, STATUS, useAbh } from "@abh/ui";
-import { Brain } from "lucide-react";
+import { Brain, Check, Plus, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useCelebrate } from "../Celebration";
 import { buildGraphData } from "../lib/graphData";
@@ -35,27 +35,53 @@ export function BrainSpace() {
   const status = topic ? statuses.get(topic.id) ?? "locked" : "locked";
 
   const inspector = (
-    <div className="p-5">
+    <div className="px-6 py-7">
       {proposal ? (
         <>
-          <div className="mb-2 inline-flex rounded-full bg-ai/10 px-2.5 py-1 text-[11px] font-medium text-ai">✦ AI suggests</div>
-          <h2 className="text-xl font-semibold">{proposal.title}</h2>
-          <p className="mt-3 text-sm leading-relaxed text-fg">{proposal.why}</p>
-          <button onClick={() => { void acceptProposal(proposal); setSelectedId(proposal.nodeId); }} className="mt-6 w-full rounded-lg bg-ai py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110">+ Add to your map</button>
+          <div className="t-eyebrow flex items-center gap-1.5 text-ai">
+            <Sparkles size={12} /> AI suggests
+          </div>
+          <h2 className="t-title2 mt-3 text-balance">{proposal.title}</h2>
+          <p className="t-body mt-3 text-muted">{proposal.why}</p>
+          <button
+            onClick={() => { void acceptProposal(proposal); setSelectedId(proposal.nodeId); }}
+            className="pressable mt-7 flex w-full items-center justify-center gap-2 rounded-full bg-ai py-3 text-[14px] font-semibold text-white shadow-[var(--e2)] transition hover:brightness-110"
+          >
+            <Plus size={16} strokeWidth={2.5} /> Add to your map
+          </button>
         </>
       ) : topic ? (
         <>
-          <div className="mb-2 inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium" style={{ background: `${domainColor(topic.tags[0])}22`, color: domainColor(topic.tags[0]) }}>{topic.tags[0] ?? "topic"}</div>
-          <h2 className="text-xl font-semibold">{topic.title}</h2>
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted"><span className="h-2 w-2 rounded-full" style={{ background: STATUS[status].dot }} />{STATUS[status].label}</div>
-          {topic.whyItMatters && <p className="mt-4 text-sm leading-relaxed text-fg">{topic.whyItMatters}</p>}
+          <div className="t-eyebrow" style={{ color: domainColor(topic.tags[0]) }}>
+            {topic.tags[0] ?? "topic"}
+          </div>
+          <h2 className="t-title2 mt-2.5 text-balance">{topic.title}</h2>
+          <div className="mt-2.5 flex items-center gap-1.5 text-[12.5px] text-muted">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS[status].dot }} />
+            {STATUS[status].label}
+          </div>
+          {topic.whyItMatters && <p className="t-body mt-5 text-muted">{topic.whyItMatters}</p>}
           {needs.length > 0 && <Rel title="Needs first" ids={needs} title2={title} onSel={setSelectedId} />}
           {unlocks.length > 0 && <Rel title="Unlocks" ids={unlocks} title2={title} onSel={setSelectedId} />}
-          <div className="mt-6">
+          <div className="mt-8">
             {status === "known" ? (
-              <button onClick={() => void setProgress(topic.id, "not_started")} className="w-full rounded-lg border border-hairline py-2.5 text-sm font-semibold text-fg transition hover:bg-surface">✓ Known — undo</button>
+              <button
+                onClick={() => void setProgress(topic.id, "not_started")}
+                className="pressable flex w-full items-center justify-center gap-2 rounded-full bg-surface-2 py-3 text-[14px] font-semibold text-fg"
+              >
+                <Check size={16} className="text-known" /> Known <span className="text-muted">· undo</span>
+              </button>
             ) : (
-              <button onClick={() => void completeAndCelebrate(topic.id)} disabled={status === "locked"} className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110 active:scale-[0.98] disabled:opacity-40">Mark known</button>
+              <button
+                onClick={() => void completeAndCelebrate(topic.id)}
+                disabled={status === "locked"}
+                className="pressable flex w-full items-center justify-center gap-2 rounded-full bg-accent py-3 text-[14px] font-semibold text-accent-ink shadow-[var(--e2)] transition hover:brightness-[1.06] disabled:opacity-40 disabled:shadow-none"
+              >
+                <Check size={16} /> Mark known
+              </button>
+            )}
+            {status === "locked" && (
+              <p className="t-foot mt-2.5 text-center text-subtle">Clear its prerequisites to open this</p>
             )}
           </div>
         </>
@@ -86,11 +112,17 @@ export function BrainSpace() {
 
 function Rel({ title, ids, title2, onSel }: { title: string; ids: string[]; title2: (id: string) => string; onSel: (id: string) => void }) {
   return (
-    <div className="mt-5">
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-accent">{title}</div>
-      <div className="flex flex-col gap-1">
+    <div className="mt-6">
+      <div className="t-eyebrow mb-2 text-subtle">{title}</div>
+      <div className="flex flex-wrap gap-1.5">
         {ids.map((id) => (
-          <button key={id} onClick={() => onSel(id)} className="truncate rounded-md border border-hairline px-2.5 py-1.5 text-left text-[13px] text-fg transition hover:border-hairline hover:bg-surface">{title2(id)}</button>
+          <button
+            key={id}
+            onClick={() => onSel(id)}
+            className="pressable max-w-full truncate rounded-full bg-surface-2 px-3 py-1.5 text-[12.5px] font-medium text-fg transition hover:brightness-110"
+          >
+            {title2(id)}
+          </button>
         ))}
       </div>
     </div>
