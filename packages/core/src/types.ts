@@ -181,6 +181,11 @@ export const Profile = z.object({
    * streak you can never recover causes abandonment, not motivation.
    */
   streakFreezes: z.number().int().nonnegative().default(2),
+  /**
+   * Where the floating nav dock sits. "auto" resolves per device — bottom on
+   * phones (thumb reach), top on larger screens.
+   */
+  dockPosition: z.enum(["auto", "top", "bottom"]).default("auto"),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
   rev: z.number().int().nonnegative().default(0),

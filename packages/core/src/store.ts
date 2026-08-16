@@ -307,6 +307,7 @@ export class MapStore {
       bestStreak: 0,
       lastActiveDay: null,
       streakFreezes: 2,
+      dockPosition: "auto",
       createdAt: ts,
       updatedAt: ts,
       rev: 0,

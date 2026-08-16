@@ -1,102 +1,43 @@
 "use client";
 
 /**
- * AdaptiveShell — one nav that becomes the right thing at every size:
- *   compact  → bottom navigation bar (glass)
- *   medium   → left navigation rail (foldable unfolded / small tablet)
- *   expanded → permanent left sidebar (tablet / iPad / desktop)
+ * AdaptiveShell — the layout host.
  *
- * All colours come from theme tokens, and the nav is a frosted-glass surface,
- * so it follows light/dark automatically. The Flutter app mirrors this exact
- * bottom-nav ↔ rail ↔ sidebar progression.
+ * Navigation lives in the FloatingDock, which floats *over* this content, so
+ * the shell's only job is to give the app a full-viewport canvas and reserve
+ * enough padding that content can scroll under the dock without ever being
+ * hidden behind it.
  */
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useBreakpoint } from "./breakpoints.js";
-
-export interface NavItem {
-  id: string;
-  label: string;
-  icon: ReactNode;
-}
+import { resolveDockPosition, type DockPosition } from "./FloatingDock.js";
 
 interface Props {
-  items: NavItem[];
-  activeId: string;
-  onSelect: (id: string) => void;
-  brand?: ReactNode;
-  action?: ReactNode;
   children: ReactNode;
+  /** Where the dock sits, so we can reserve room for it. */
+  dockPosition?: DockPosition;
 }
 
-const glass: CSSProperties = {
-  background: "var(--glass-bg)",
-  WebkitBackdropFilter: "saturate(180%) blur(var(--glass-blur))",
-  backdropFilter: "saturate(180%) blur(var(--glass-blur))",
-};
+/** Dock height + inset + a little breathing room. */
+const DOCK_CLEARANCE = 84;
 
-export function AdaptiveShell({ items, activeId, onSelect, brand, action, children }: Props) {
-  const size = useBreakpoint();
-  const compact = size === "compact";
-  const expanded = size === "expanded";
+export function AdaptiveShell({ children, dockPosition = "auto" }: Props) {
+  const compact = useBreakpoint() === "compact";
+  const place = resolveDockPosition(dockPosition, compact);
 
-  if (compact) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100dvh", color: "var(--fg)" }}>
-        <div style={{ flex: 1, minHeight: 0, position: "relative" }}>{children}</div>
-        <nav style={{ ...glass, display: "flex", borderTop: "1px solid var(--glass-border)", paddingBottom: "env(safe-area-inset-bottom)" }}>
-          {items.map((it) => {
-            const active = it.id === activeId;
-            return (
-              <button
-                key={it.id}
-                onClick={() => onSelect(it.id)}
-                style={{
-                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                  padding: "9px 4px 8px", border: "none", background: "none", cursor: "pointer",
-                  color: active ? "var(--fg)" : "var(--fg-subtle)", fontSize: 11, fontWeight: active ? 600 : 500,
-                }}
-              >
-                <span style={{ display: "grid", placeItems: "center", color: active ? "var(--accent)" : "inherit" }}>{it.icon}</span>
-                {it.label}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-    );
-  }
-
-  const railWidth = expanded ? 216 : 74;
   return (
-    <div style={{ display: "flex", height: "100dvh", color: "var(--fg)" }}>
-      <nav style={{ ...glass, width: railWidth, flexShrink: 0, display: "flex", flexDirection: "column", borderRight: "1px solid var(--glass-border)", padding: 12, gap: 4 }}>
-        {brand && <div style={{ padding: expanded ? "6px 8px 16px" : "6px 0 16px", display: "flex", justifyContent: expanded ? "flex-start" : "center" }}>{brand}</div>}
-        {items.map((it) => {
-          const active = it.id === activeId;
-          return (
-            <button
-              key={it.id}
-              onClick={() => onSelect(it.id)}
-              title={it.label}
-              style={{
-                display: "flex", alignItems: "center", gap: 11,
-                justifyContent: expanded ? "flex-start" : "center",
-                padding: expanded ? "10px 12px" : "11px 0", borderRadius: 12, border: "none",
-                background: active ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "transparent",
-                cursor: "pointer",
-                color: active ? "var(--fg)" : "var(--fg-muted)", fontSize: 14, fontWeight: active ? 600 : 500,
-                width: "100%", textAlign: "left",
-              }}
-            >
-              <span style={{ display: "grid", placeItems: "center", color: active ? "var(--accent)" : "inherit" }}>{it.icon}</span>
-              {expanded && <span>{it.label}</span>}
-            </button>
-          );
-        })}
-        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8, alignItems: expanded ? "stretch" : "center" }}>{action}</div>
-      </nav>
-      <main style={{ flex: 1, minWidth: 0, position: "relative" }}>{children}</main>
+    <div
+      style={{
+        height: "100dvh",
+        overflow: "hidden",
+        color: "var(--fg)",
+        paddingTop: place === "top" ? DOCK_CLEARANCE : 0,
+        paddingBottom: place === "bottom" ? DOCK_CLEARANCE : 0,
+        boxSizing: "border-box",
+      }}
+    >
+      <main style={{ position: "relative", height: "100%", minHeight: 0 }}>{children}</main>
     </div>
   );
 }

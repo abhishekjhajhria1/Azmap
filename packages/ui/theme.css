@@ -54,6 +54,16 @@
   --seam: rgba(15, 23, 30, 0.07);
 }
 
+/* Radii — nothing in this product is sharp-cornered. */
+:root {
+  --r-pill: 999px;
+  --r-lg: 26px;   /* floating panels, docks, sheets */
+  --r-md: 18px;   /* cards, grouped lists */
+  --r-sm: 12px;   /* small controls */
+  /* How far floating chrome sits off the edge. Chrome never touches an edge. */
+  --float-inset: 16px;
+}
+
 /* Type scale — one ratio, dramatic jumps, optical tracking.
    Small text never gets negative tracking; display text always does. */
 :root {
@@ -150,12 +160,12 @@
   --seam: rgba(255, 255, 255, 0.07);
 }
 
-/* Smooth the flip between themes (but never animate layout). */
-:root,
-:root * {
-  transition-property: background-color, border-color, color, box-shadow, fill, stroke;
-  transition-duration: 220ms;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+/* Theme-flip smoothing — scoped to the few surfaces that actually change,
+   NEVER `* `. A universal transition delays every hover/press in the app and
+   forces style+paint work across the whole tree; it reads as sluggish. */
+body {
+  transition: background-color 200ms cubic-bezier(0.4, 0, 0.2, 1),
+              color 200ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* ---- Craft primitives -------------------------------------------------
@@ -180,7 +190,7 @@
 .card {
   background: var(--surface);
   border: 1px solid var(--seam);
-  border-radius: 18px;
+  border-radius: var(--r-md);
   box-shadow: var(--e2);
 }
 
@@ -189,7 +199,7 @@
 .group {
   background: var(--surface);
   border: 1px solid var(--seam);
-  border-radius: 18px;
+  border-radius: var(--r-md);
   box-shadow: var(--e1);
   overflow: hidden;
 }
@@ -224,14 +234,33 @@
   border-radius: 8px;
 }
 
-/* The frosted-glass material — for elevated/floating surfaces only. */
+/* The frosted-glass material — for elevated/floating surfaces only.
+   Blur is the most expensive effect on the page, so this class is deliberately
+   rationed: the dock, one panel, and an overlay at most. Everything else uses
+   solid/translucent fills. `contain: paint` keeps the blur from invalidating
+   the rest of the tree. */
 .glass {
   background: var(--glass-bg);
   -webkit-backdrop-filter: saturate(180%) blur(var(--glass-blur));
   backdrop-filter: saturate(180%) blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
   box-shadow: var(--glass-shadow);
+  contain: paint;
 }
+
+/* `.float` — THE material for chrome. Glass + large radius + elevation, sitting
+   above the content rather than welded to an edge. Content scrolls underneath. */
+.float {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(var(--glass-blur));
+  backdrop-filter: saturate(180%) blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--e3);
+  border-radius: var(--r-lg);
+  contain: paint;
+  will-change: transform;
+}
+.float--pill { border-radius: var(--r-pill); }
 
 /* Calm ambient backdrop so the glass blur has something to blur. */
 .abh-ambient {
