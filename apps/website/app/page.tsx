@@ -1,4 +1,4 @@
-import LiveMap from "@/components/LiveMap";
+import HeroGraph from "@/components/HeroGraph";
 import { Audience, Eyebrow, Pillar, Section, Stat } from "@/components/ui";
 
 export default function Home() {
@@ -20,10 +20,10 @@ export default function Home() {
             <a href="#why" className="transition hover:text-parchment">Why it works</a>
           </nav>
           <a
-            href="#waitlist"
+            href="/app"
             className="rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-forest-950 transition hover:bg-amber-soft"
           >
-            Get early access
+            Open the map
           </a>
         </div>
       </header>
@@ -53,10 +53,10 @@ export default function Home() {
                   Get early access
                 </a>
                 <a
-                  href="#product"
+                  href="/app"
                   className="rounded-lg border border-forest-600 px-6 py-3 font-semibold text-parchment transition hover:bg-forest-800"
                 >
-                  See how it works
+                  Explore the live map
                 </a>
               </div>
               <p className="mt-6 text-sm text-forest-400">
@@ -66,7 +66,7 @@ export default function Home() {
             </div>
 
             <div className="animate-fade-up [animation-delay:120ms]">
-              <LiveMap />
+              <HeroGraph />
             </div>
           </div>
         </Section>
