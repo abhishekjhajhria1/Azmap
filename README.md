@@ -21,13 +21,15 @@ This repo is the multi-surface home for that idea.
 
 | Path | What it is | Status |
 | --- | --- | --- |
-| [`packages/core`](packages/core) | `@abh/core` — the map: domain model, unlock engine, local-first storage. The shared brain every app uses. | ✅ built, tested |
-| [`apps/website`](apps/website) | Marketing site (Next.js). Its hero map is a live demo running the real engine. | ✅ built |
+| [`packages/core`](packages/core) | `@abh/core` — the shared brain: domain model, unlock/reveal engine, roadmaps, suggestions, local-first storage + sync seams. Every surface reuses it. | ✅ built, 35 tests |
+| [`packages/ui`](packages/ui) | `@abh/ui` — design system: theme, adaptive shell (bottom-nav↔rail↔sidebar), the WebGL `GraphView` (Sigma + graphology, worker layout), and the reactive `useAbh` store. | ✅ built |
+| [`apps/app`](apps/app) | **The product** — a local-first, offline PWA (Vite + React). One map, distinct spaces: second brain, focused roadmaps, ask-anything, capture. Runs on the real store. | ✅ built |
+| [`apps/website`](apps/website) | Marketing site (Next.js). Landing page + live-demo hero. | ✅ built |
 | [`apps/extension`](apps/extension) | Browser extension (WXT, MV3). Capture what you read, straight into the map. | ✅ built |
-| [`apps/mobile`](apps/mobile) | Flutter app (iOS + Android). | 🔜 planned |
-| [`apps/desktop`](apps/desktop) | All-OS desktop app (Tauri). | 🔜 planned |
+| [`apps/mobile`](apps/mobile) | Flutter — one codebase for iOS + Android, adaptive for phone/foldable/tablet/iPad. Mirrors `apps/app`. | 🔜 planned |
+| [`apps/desktop`](apps/desktop) | All-OS desktop app (Tauri wraps `apps/app`). | 🔜 planned |
 
-Architecture and the reasoning behind the "one map, four surfaces" design:
+Architecture and the reasoning behind "one shared model, distinct experiences":
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Quick start
@@ -35,15 +37,24 @@ Architecture and the reasoning behind the "one map, four surfaces" design:
 Requires **Node ≥ 20** and **pnpm 10**.
 
 ```bash
-pnpm install          # install the whole workspace
-pnpm core:test        # run the domain engine tests (23 tests)
-pnpm core:build       # build @abh/core
+pnpm install                       # install the whole workspace
+pnpm --filter @abh/core test       # run the domain engine tests (35)
+pnpm -r build                      # build core, ui, and every app
 ```
+
+### Run the app (the product)
+
+```bash
+pnpm --filter @abh/app dev         # http://localhost:5173
+```
+
+Onboard, start a roadmap, and watch it flow into your second-brain mind map.
+Everything persists on-device (IndexedDB); it works offline.
 
 ### Run the website
 
 ```bash
-pnpm web:dev          # http://localhost:3000
+pnpm --filter @abh/website dev     # http://localhost:3000
 ```
 
 The hero map is playable — click an amber ("open to you now") node and the

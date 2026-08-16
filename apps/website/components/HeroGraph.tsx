@@ -32,8 +32,8 @@ export default function HeroGraph() {
           <span className="h-2 w-2 rounded-full bg-amber animate-pulse-soft" />
           Live map — drag, zoom, tap a glowing node
         </div>
-        <a href="/app" className="text-xs font-medium text-amber transition hover:text-amber-soft">
-          Open full map →
+        <a href="#waitlist" className="text-xs font-medium text-amber transition hover:text-amber-soft">
+          Get early access →
         </a>
       </div>
       <div className="relative h-[420px]">
