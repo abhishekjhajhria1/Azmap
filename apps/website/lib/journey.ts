@@ -25,34 +25,52 @@ import {
 
 export type Role = "learner" | "explorer" | "guardian";
 
+/** A node the learner added by asking/exploring — the curious layer. */
+export interface Exploration {
+  id: string;
+  title: string;
+  why: string;
+  domain: string;
+  parentId?: string;
+}
+
 interface Persisted {
   role: Role | null;
   activeRoadmapId: string | null;
   known: string[];
   accepted: string[];
+  explorations: Exploration[];
 }
 
 const KEY = "abh.journey.v1";
 
+const EMPTY: Persisted = {
+  role: null,
+  activeRoadmapId: null,
+  known: [],
+  accepted: [],
+  explorations: [],
+};
+
 function load(): Persisted {
-  if (typeof window === "undefined")
-    return { role: null, activeRoadmapId: null, known: [], accepted: [] };
+  if (typeof window === "undefined") return { ...EMPTY };
   try {
     const raw = window.localStorage.getItem(KEY);
-    if (raw) return JSON.parse(raw) as Persisted;
+    if (raw) return { ...EMPTY, ...(JSON.parse(raw) as Persisted) };
   } catch {
     /* ignore corrupt state */
   }
-  return { role: null, activeRoadmapId: null, known: [], accepted: [] };
+  return { ...EMPTY };
+}
+
+let exploreSeq = 0;
+function newExplorationId() {
+  exploreSeq += 1;
+  return `x_${Date.now().toString(36)}_${exploreSeq}`;
 }
 
 export function useJourney() {
-  const [state, setState] = useState<Persisted>({
-    role: null,
-    activeRoadmapId: null,
-    known: [],
-    accepted: [],
-  });
+  const [state, setState] = useState<Persisted>({ ...EMPTY });
   const [hydrated, setHydrated] = useState(false);
 
   // Hydrate from localStorage on mount (avoids SSR mismatch).
@@ -129,14 +147,52 @@ export function useJourney() {
       .map(branchTopic);
   }, [def, known, accepted]);
 
-  // What the graph canvas renders: revealed real topics + ghost suggestions.
+  // Nodes the learner added by asking/exploring — always on the map. Their
+  // links are soft, so exploring sideways never gates the roadmap.
+  const explorationTopics = useMemo<Topic[]>(() => {
+    const now = Date.now();
+    return state.explorations.map((e) => ({
+      id: e.id,
+      title: e.title,
+      summary: "",
+      whyItMatters: e.why,
+      unlocks: "",
+      progress: known.has(e.id) ? "known" : "not_started",
+      origin: "capture",
+      sources: [],
+      tags: [e.domain],
+      createdAt: now,
+      updatedAt: now,
+      rev: 0,
+    }));
+  }, [state.explorations, known]);
+
+  const explorationEdges = useMemo<Edge[]>(() => {
+    const ids = new Set([
+      ...topics.map((t) => t.id),
+      ...state.explorations.map((e) => e.id),
+    ]);
+    return state.explorations
+      .filter((e) => e.parentId && ids.has(e.parentId))
+      .map((e) => ({
+        id: `${e.parentId}~>${e.id}`,
+        from: e.parentId!,
+        to: e.id,
+        strength: "soft" as const,
+        origin: "capture" as const,
+        createdAt: 0,
+        rev: 0,
+      }));
+  }, [state.explorations, topics]);
+
+  // What the graph canvas renders: revealed real topics + explorations + ghosts.
   const visibleTopics = useMemo(
     () => topics.filter((t) => revealedIds.has(t.id)),
     [topics, revealedIds],
   );
   const graphTopics = useMemo(
-    () => [...visibleTopics, ...suggestions],
-    [visibleTopics, suggestions],
+    () => [...visibleTopics, ...explorationTopics, ...suggestions],
+    [visibleTopics, explorationTopics, suggestions],
   );
   const ghostIds = useMemo(() => new Set(suggestions.map((s) => s.id)), [suggestions]);
   const graphEdges = useMemo(() => {
@@ -144,10 +200,10 @@ export function useJourney() {
     const suggestionEdges = seedEdges(
       def?.branches.filter((b) => ghostIds.has(b.id)) ?? [],
     );
-    return [...edges, ...suggestionEdges].filter(
+    return [...edges, ...explorationEdges, ...suggestionEdges].filter(
       (e) => shown.has(e.from) && shown.has(e.to),
     );
-  }, [def, edges, graphTopics, ghostIds]);
+  }, [def, edges, explorationEdges, graphTopics, ghostIds]);
 
   // ---- Actions ----
   const setRole = useCallback((role: Role) => setState((s) => ({ ...s, role })), []);
@@ -174,12 +230,37 @@ export function useJourney() {
       ),
     [],
   );
-  const reset = useCallback(
-    () => setState({ role: null, activeRoadmapId: null, known: [], accepted: [] }),
+  /** Add a node by asking/exploring. Returns the new node id for linking. */
+  const explore = useCallback(
+    (input: { title: string; why?: string; domain?: string; parentId?: string }) => {
+      const id = newExplorationId();
+      setState((s) => ({
+        ...s,
+        explorations: [
+          ...s.explorations,
+          {
+            id,
+            title: input.title,
+            why: input.why ?? "",
+            domain: input.domain ?? "everyday",
+            parentId: input.parentId,
+          },
+        ],
+      }));
+      return id;
+    },
     [],
   );
+  const reset = useCallback(() => setState({ ...EMPTY }), []);
   const leaveRoadmap = useCallback(
-    () => setState((s) => ({ ...s, activeRoadmapId: null, known: [], accepted: [] })),
+    () =>
+      setState((s) => ({
+        ...s,
+        activeRoadmapId: null,
+        known: [],
+        accepted: [],
+        explorations: [],
+      })),
     [],
   );
 
@@ -202,6 +283,7 @@ export function useJourney() {
     complete,
     uncomplete,
     acceptSuggestion,
+    explore,
     reset,
     leaveRoadmap,
   };

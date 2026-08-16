@@ -9,8 +9,9 @@
  * This is a real, playable slice of the product — not a marketing mock.
  */
 
-import { graph as engine, type MapStatus, type Topic } from "@abh/core";
+import { type Edge, graph as engine, type MapStatus, type Topic } from "@abh/core";
 import { useMemo, useState } from "react";
+import AskAnything from "@/components/AskAnything";
 import GraphCanvas from "@/components/GraphCanvas";
 import PlotNav from "@/components/PlotNav";
 import {
@@ -20,8 +21,9 @@ import {
   DOMAIN_LABEL,
   domainOf,
 } from "@/lib/sampleMap";
+import { DOMAIN_COLOR as EXTRA_COLORS } from "@/lib/roadmaps";
 
-const EDGES = buildSampleEdges();
+let exploreSeq = 0;
 
 const STATUS_META: Record<MapStatus, { label: string; dot: string }> = {
   known: { label: "Known", dot: "#40916c" },
@@ -32,13 +34,14 @@ const STATUS_META: Record<MapStatus, { label: string; dot: string }> = {
 
 export default function AppWorkspace() {
   const [topics, setTopics] = useState<Topic[]>(buildSampleTopics);
+  const [edges, setEdges] = useState<Edge[]>(buildSampleEdges);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [toast, setToast] = useState<string | null>(null);
 
   const statuses = useMemo(
-    () => engine.computeStatuses({ topics, edges: EDGES }),
-    [topics],
+    () => engine.computeStatuses({ topics, edges }),
+    [topics, edges],
   );
 
   const knownCount = topics.filter((t) => t.progress === "known").length;
@@ -60,7 +63,7 @@ export default function AppWorkspace() {
   }, [topics, query]);
 
   function complete(id: string) {
-    const unlocked = engine.wouldUnlock(id, { topics, edges: EDGES });
+    const unlocked = engine.wouldUnlock(id, { topics, edges });
     setTopics((prev) =>
       prev.map((t) =>
         t.id === id ? { ...t, progress: "known", completedAt: Date.now() } : t,
@@ -86,14 +89,60 @@ export default function AppWorkspace() {
   const relations = useMemo(() => {
     if (!selected) return { prereqs: [] as Topic[], unlocks: [] as Topic[] };
     const byId = new Map(topics.map((t) => [t.id, t]));
-    const prereqs = EDGES.filter((e) => e.to === selected.id)
+    const prereqs = edges.filter((e) => e.to === selected.id)
       .map((e) => byId.get(e.from))
       .filter(Boolean) as Topic[];
-    const unlocks = EDGES.filter((e) => e.from === selected.id)
+    const unlocks = edges.filter((e) => e.from === selected.id)
       .map((e) => byId.get(e.to))
       .filter(Boolean) as Topic[];
     return { prereqs, unlocks };
-  }, [selected, topics]);
+  }, [selected, topics, edges]);
+
+  // Colour + label helpers that also cover the "how things work" domains that
+  // arrive when someone asks a question here.
+  const colorOf = (t: Topic) =>
+    DOMAIN_COLOR[domainOf(t)] ?? EXTRA_COLORS[t.tags[0] ?? ""] ?? "#c77dff";
+  const labelOf = (domain: string) =>
+    DOMAIN_LABEL[domain as keyof typeof DOMAIN_LABEL] ??
+    (domain ? domain[0]!.toUpperCase() + domain.slice(1) : "Explorations");
+
+  // The curious layer: an asked/opened topic joins this map. Link it to the
+  // selected node if there is one, so exploration branches from where you are.
+  function addExploration(input: {
+    title: string;
+    why?: string;
+    domain?: string;
+    parentId?: string;
+  }): string {
+    exploreSeq += 1;
+    const id = `x_${Date.now().toString(36)}_${exploreSeq}`;
+    const parent = input.parentId ?? selectedId ?? undefined;
+    const now = Date.now();
+    setTopics((prev) => [
+      ...prev,
+      {
+        id,
+        title: input.title,
+        summary: "",
+        whyItMatters: input.why ?? "",
+        unlocks: "",
+        progress: "not_started",
+        origin: "capture",
+        sources: [],
+        tags: [input.domain ?? "everyday"],
+        createdAt: now,
+        updatedAt: now,
+        rev: 0,
+      },
+    ]);
+    if (parent) {
+      setEdges((prev) => [
+        ...prev,
+        { id: `${parent}~>${id}`, from: parent, to: id, strength: "soft", origin: "capture", createdAt: 0, rev: 0 },
+      ]);
+    }
+    return id;
+  }
 
   return (
     <div className="flex h-screen flex-col bg-forest-950 text-parchment">
@@ -131,9 +180,9 @@ export default function AppWorkspace() {
                 <div className="flex items-center gap-2 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-forest-400">
                   <span
                     className="h-2 w-2 rounded-full"
-                    style={{ background: DOMAIN_COLOR[domain as keyof typeof DOMAIN_COLOR] }}
+                    style={{ background: DOMAIN_COLOR[domain as keyof typeof DOMAIN_COLOR] ?? EXTRA_COLORS[domain] ?? "#c77dff" }}
                   />
-                  {DOMAIN_LABEL[domain as keyof typeof DOMAIN_LABEL]}
+                  {labelOf(domain)}
                 </div>
                 {ts.map((t) => {
                   const status = statuses.get(t.id) ?? "locked";
@@ -165,9 +214,9 @@ export default function AppWorkspace() {
           <div className="bg-grid absolute inset-0 opacity-40" />
           <GraphCanvas
             topics={topics}
-            edges={EDGES}
+            edges={edges}
             selectedId={selectedId}
-            colorOf={(t) => DOMAIN_COLOR[domainOf(t)]}
+            colorOf={colorOf}
             onSelect={setSelectedId}
             onComplete={complete}
             className="absolute inset-0 h-full w-full"
@@ -271,6 +320,9 @@ export default function AppWorkspace() {
           )}
         </aside>
       </div>
+
+      {/* Ask anything — the curious layer, open to everyone. */}
+      <AskAnything onAdd={addExploration} />
     </div>
   );
 }

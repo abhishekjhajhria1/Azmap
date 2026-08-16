@@ -12,6 +12,7 @@
 
 import { graph as engine, type MapStatus, type Topic } from "@abh/core";
 import { useMemo, useState } from "react";
+import AskAnything from "@/components/AskAnything";
 import GraphCanvas from "@/components/GraphCanvas";
 import PlotNav from "@/components/PlotNav";
 import { useJourney } from "@/lib/journey";
@@ -229,6 +230,9 @@ export default function RoadmapPlot() {
           )}
         </aside>
       </div>
+
+      {/* The curious layer — available even while following a roadmap. */}
+      <AskAnything onAdd={j.explore} />
     </div>
   );
 }

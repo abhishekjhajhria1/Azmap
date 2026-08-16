@@ -30,7 +30,7 @@ export interface RoadmapDef {
   branches: TopicSeed[];
 }
 
-/** One color map spanning every domain used across roadmaps. */
+/** One color map spanning every domain used across roadmaps and explorers. */
 export const DOMAIN_COLOR: Record<string, string> = {
   web: "#5ea0e9",
   css: "#8bd3dd",
@@ -43,6 +43,14 @@ export const DOMAIN_COLOR: Record<string, string> = {
   music: "#e9967a",
   theory: "#8bd3dd",
   practice: "#74c69d",
+  // "How things work" domains — the curious layer, open to everyone.
+  physics: "#5ea0e9",
+  bio: "#74c69d",
+  tech: "#e9b949",
+  econ: "#e9967a",
+  space: "#c77dff",
+  earth: "#8bd3dd",
+  everyday: "#f2d493",
 };
 
 export const ROADMAPS: RoadmapDef[] = [
