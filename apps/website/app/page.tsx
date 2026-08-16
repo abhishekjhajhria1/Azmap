@@ -20,10 +20,10 @@ export default function Home() {
             <a href="#why" className="transition hover:text-parchment">Why it works</a>
           </nav>
           <a
-            href="/app"
+            href="/roadmap"
             className="rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-forest-950 transition hover:bg-amber-soft"
           >
-            Open the map
+            Start a roadmap
           </a>
         </div>
       </header>
@@ -47,16 +47,16 @@ export default function Home() {
               </p>
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <a
-                  href="#waitlist"
+                  href="/roadmap"
                   className="rounded-lg bg-amber px-6 py-3 font-semibold text-forest-950 transition hover:bg-amber-soft"
                 >
-                  Get early access
+                  Start a roadmap
                 </a>
                 <a
                   href="/app"
                   className="rounded-lg border border-forest-600 px-6 py-3 font-semibold text-parchment transition hover:bg-forest-800"
                 >
-                  Explore the live map
+                  Explore anything
                 </a>
               </div>
               <p className="mt-6 text-sm text-forest-400">

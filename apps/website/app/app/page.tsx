@@ -12,6 +12,7 @@
 import { graph as engine, type MapStatus, type Topic } from "@abh/core";
 import { useMemo, useState } from "react";
 import GraphCanvas from "@/components/GraphCanvas";
+import PlotNav from "@/components/PlotNav";
 import {
   buildSampleEdges,
   buildSampleTopics,
@@ -103,15 +104,13 @@ export default function AppWorkspace() {
             A
           </a>
           <span className="text-sm font-semibold">ABH</span>
-          <span className="hidden text-xs text-forest-400 sm:inline">· Machine Learning map</span>
+          <span className="hidden text-xs text-forest-400 sm:inline">· Explore anything</span>
         </div>
-        <div className="flex items-center gap-4 text-xs text-forest-300">
-          <span>{availableCount} open now</span>
+        <div className="flex items-center gap-3 text-xs text-forest-300">
+          <span className="hidden sm:inline">{availableCount} open now</span>
           <span className="hidden h-3 w-px bg-forest-700 sm:block" />
-          <span>{percent}% known</span>
-          <a href="/" className="rounded-md border border-forest-700 px-2.5 py-1 transition hover:bg-forest-800">
-            Exit
-          </a>
+          <span className="hidden sm:inline">{percent}% known</span>
+          <PlotNav active="app" />
         </div>
       </header>
 

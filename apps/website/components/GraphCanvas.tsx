@@ -29,6 +29,12 @@ interface Props {
   colorOf?: (topic: Topic) => string;
   onSelect?: (id: string | null) => void;
   onComplete?: (id: string) => void;
+  /**
+   * Ids rendered as "ghost" suggestion nodes — dashed and translucent, the
+   * AI's proposals sitting on the frontier of the map. Clicking one opens it
+   * (onSelect) rather than completing it.
+   */
+  ghostIds?: Set<string>;
   /** "explore" enables full interaction; "ambient" is a calm auto-drifting demo. */
   mode?: "explore" | "ambient";
   className?: string;
@@ -59,6 +65,7 @@ export default function GraphCanvas({
   colorOf,
   onSelect,
   onComplete,
+  ghostIds,
   mode = "explore",
   className = "",
 }: Props) {
@@ -74,10 +81,12 @@ export default function GraphCanvas({
   const dataRef = useRef({ topics, edges });
   const cbRef = useRef({ onSelect, onComplete });
   const selectedRef = useRef<string | null>(selectedId ?? null);
+  const ghostRef = useRef<Set<string>>(ghostIds ?? new Set());
 
   dataRef.current = { topics, edges };
   cbRef.current = { onSelect, onComplete };
   selectedRef.current = selectedId ?? null;
+  ghostRef.current = ghostIds ?? new Set();
 
   // Keep the simulation node set in sync with the topic set.
   useEffect(() => {
@@ -288,6 +297,7 @@ export default function GraphCanvas({
 
       // Nodes.
       const now = performance.now();
+      const ghosts = ghostRef.current;
       for (const t of topics) {
         const nde = nodes.get(t.id);
         if (!nde) continue;
@@ -295,9 +305,49 @@ export default function GraphCanvas({
         const r = radiusOf(nde);
         const dim = focus ? (lit.has(t.id) ? 1 : 0.18) : 1;
         const base = colorOf?.(t) ?? "#74c69d";
-        const fill = status === "locked" ? "#16342440" : base;
+        const isGhost = ghosts.has(t.id);
+        const fill = isGhost
+          ? "rgba(199,125,255,0.10)"
+          : status === "locked"
+            ? "#16342440"
+            : base;
 
         ctx.globalAlpha = dim;
+
+        // Ghost suggestion: a dashed violet ring with a "+" — an AI proposal
+        // sitting on the map, waiting to be opened and added.
+        if (isGhost) {
+          const pulse = 0.5 + 0.5 * Math.sin(now / 600 + nde.x);
+          ctx.beginPath();
+          ctx.arc(nde.x, nde.y, r, 0, Math.PI * 2);
+          ctx.fillStyle = fill;
+          ctx.fill();
+          ctx.setLineDash([4 / view.scale, 4 / view.scale]);
+          ctx.lineWidth = 1.8 / view.scale;
+          ctx.strokeStyle = `rgba(199,125,255,${0.5 + pulse * 0.4})`;
+          ctx.stroke();
+          ctx.setLineDash([]);
+          // plus glyph
+          ctx.strokeStyle = "#c77dff";
+          ctx.lineWidth = 2 / view.scale;
+          ctx.beginPath();
+          ctx.moveTo(nde.x - r * 0.4, nde.y);
+          ctx.lineTo(nde.x + r * 0.4, nde.y);
+          ctx.moveTo(nde.x, nde.y - r * 0.4);
+          ctx.lineTo(nde.x, nde.y + r * 0.4);
+          ctx.stroke();
+          const showG = view.scale > 0.6 || lit.has(t.id) || !focus;
+          if (showG) {
+            ctx.globalAlpha = dim * 0.8;
+            ctx.fillStyle = "#d8b6ff";
+            ctx.font = `12px ui-sans-serif, system-ui, sans-serif`;
+            ctx.textAlign = "center";
+            ctx.textBaseline = "top";
+            ctx.fillText(t.title, nde.x, nde.y + r + 4);
+          }
+          ctx.globalAlpha = 1;
+          continue;
+        }
 
         // Pulse halo for the things you can start right now.
         if (status === "available") {
@@ -441,11 +491,13 @@ export default function GraphCanvas({
           }, 400);
         }
         if (!drag.moved) {
-          // A click: select, and complete if it's available.
+          // A click: open it. Complete only real, available topics — a ghost
+          // suggestion is opened for review, never auto-completed.
           const { topics, edges } = dataRef.current;
           const status = engine.computeStatuses({ topics, edges }).get(drag.id);
+          const isGhost = ghostRef.current.has(drag.id);
           cbRef.current.onSelect?.(drag.id);
-          if (status === "available") cbRef.current.onComplete?.(drag.id);
+          if (!isGhost && status === "available") cbRef.current.onComplete?.(drag.id);
         }
       } else if (!drag.moved) {
         cbRef.current.onSelect?.(null);
