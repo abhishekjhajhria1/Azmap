@@ -47,7 +47,8 @@ interface AbhState {
   updateProfile: (patch: Partial<Omit<Profile, "id" | "createdAt" | "rev">>) => Promise<void>;
   startRoadmap: (def: RoadmapDef) => Promise<void>;
   setActiveRoadmap: (id: string | null) => Promise<void>;
-  complete: (id: string) => Promise<Topic[]>; // returns newly unlocked
+  /** Returns the newly-unlocked topics and the streak, so the UI can celebrate. */
+  complete: (id: string) => Promise<{ unlocked: Topic[]; streak: number }>;
   setProgress: (id: string, p: Topic["progress"]) => Promise<void>;
   explore: (input: { title: string; why?: string; domain?: string; parentId?: string }) => Promise<string>;
   acceptProposal: (p: ProposedTopic) => Promise<void>;
@@ -105,9 +106,9 @@ export const useAbh = create<AbhState>((set, get) => ({
     await get().refresh();
   },
   async complete(id) {
-    const { unlocked } = await get().store!.complete(id);
+    const { unlocked, streak } = await get().store!.complete(id);
     await get().refresh();
-    return unlocked;
+    return { unlocked, streak };
   },
   async setProgress(id, p) {
     await get().store!.setProgress(id, p);

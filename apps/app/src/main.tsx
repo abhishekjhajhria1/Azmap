@@ -4,6 +4,7 @@ import { ThemeProvider, useAbh } from "@abh/ui";
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { App } from "./App";
+import { CelebrationProvider } from "./Celebration";
 import "./index.css";
 
 // One real, on-device store — the single source of truth for every space.
@@ -15,7 +16,9 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ThemeProvider>
       {/* Calm ambient backdrop so the glass has something to blur. */}
       <div className="abh-ambient" aria-hidden />
-      <App />
+      <CelebrationProvider>
+        <App />
+      </CelebrationProvider>
     </ThemeProvider>
   </React.StrictMode>,
 );

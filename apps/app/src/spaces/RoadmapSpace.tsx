@@ -1,6 +1,7 @@
 import { getRoadmap, graph as engine, ROADMAPS, roadmapNodeId, type RoadmapDef, type MapStatus } from "@abh/core";
 import { STATUS, useAbh } from "@abh/ui";
 import { useMemo, useState } from "react";
+import { useCelebrate } from "../Celebration";
 
 /**
  * The Roadmap space — deliberately distraction-free.
@@ -51,6 +52,7 @@ function Picker({ onPick }: { onPick: (def: RoadmapDef) => void }) {
 
 function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof useAbh.getState>["topics"] }) {
   const complete = useAbh((s) => s.complete);
+  const celebrate = useCelebrate();
   const setProgress = useAbh((s) => s.setProgress);
   const leave = useAbh((s) => s.setActiveRoadmap);
   const [selectedSeed, setSelectedSeed] = useState<string | null>(null);
@@ -95,7 +97,16 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
             {status === "known" ? (
               <button onClick={() => void setProgress(nodeId, "not_started")} className="rounded-lg border border-hairline px-4 py-2.5 text-sm font-semibold text-fg transition hover:bg-surface">✓ Known — undo</button>
             ) : (
-              <button onClick={() => void complete(nodeId)} disabled={status === "locked"} className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110 disabled:opacity-40">Mark known</button>
+              <button
+                onClick={async () => {
+                  const { unlocked, streak } = await complete(nodeId);
+                  celebrate({ unlocked, streak, streakAdvanced: true });
+                }}
+                disabled={status === "locked"}
+                className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
+              >
+                Mark known
+              </button>
             )}
             {status === "locked" && <span className="ml-3 text-xs text-subtle">Clear its prerequisites first.</span>}
           </div>

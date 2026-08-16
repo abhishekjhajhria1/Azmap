@@ -1,6 +1,7 @@
 import { AdaptiveShell, type NavItem, ThemeToggle, useAbh } from "@abh/ui";
 import { Brain, Compass, Inbox, Users } from "lucide-react";
 import { type ReactElement, useState } from "react";
+import { ProgressBadge } from "./ProgressBadge";
 import { AskAnything } from "./AskAnything";
 import { Onboarding } from "./Onboarding";
 import { BrainSpace } from "./spaces/BrainSpace";
@@ -41,7 +42,12 @@ export function App() {
         activeId={space}
         onSelect={(id) => setSpace(id as SpaceId)}
         brand={<span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-sm font-bold text-accent-ink">A</span>}
-        action={<ThemeToggle />}
+        action={
+          <>
+            <ProgressBadge />
+            <ThemeToggle />
+          </>
+        }
       >
         <div className="h-full">{active.render()}</div>
       </AdaptiveShell>

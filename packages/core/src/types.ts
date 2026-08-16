@@ -171,6 +171,16 @@ export const Profile = z.object({
   /** The roadmap currently open in the focused runner, if any. */
   activeRoadmapId: z.string().nullable().default(null),
   onboardedAt: z.number().int().nullable().default(null),
+  /** Consecutive days with real learning activity. */
+  streakDays: z.number().int().nonnegative().default(0),
+  bestStreak: z.number().int().nonnegative().default(0),
+  /** Local day key ("YYYY-MM-DD") of the last activity, or null. */
+  lastActiveDay: z.string().nullable().default(null),
+  /**
+   * Grace days that auto-repair a single missed day. Forgiving by design — a
+   * streak you can never recover causes abandonment, not motivation.
+   */
+  streakFreezes: z.number().int().nonnegative().default(2),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
   rev: z.number().int().nonnegative().default(0),

@@ -20,6 +20,7 @@ import {
   newTopicId,
   now,
 } from "./ids.js";
+import { advanceStreak, dayKey } from "./streak.js";
 import { getRoadmap } from "./roadmaps/library.js";
 import { roadmapNodeId, seedEdgePairs } from "./roadmaps/lens.js";
 import type { RoadmapDef } from "./roadmaps/types.js";
@@ -106,16 +107,33 @@ export class MapStore {
 
   /**
    * Mark a topic known. Returns the topics that became newly available as a
-   * result — the payoff moment the product is built around.
+   * result — the payoff moment the product is built around — plus the streak
+   * after this activity, so the UI can celebrate both in one go.
    */
-  async complete(id: string): Promise<{ topic: Topic; unlocked: Topic[] }> {
+  async complete(id: string): Promise<{ topic: Topic; unlocked: Topic[]; streak: number }> {
     const g = await this.graph();
     const unlocked = graph.wouldUnlock(id, g);
     const topic = await this.updateTopic(id, {
       progress: "known",
       completedAt: now(),
     });
-    return { topic, unlocked };
+    const profile = await this.recordActivity();
+    return { topic, unlocked, streak: profile.streakDays };
+  }
+
+  /**
+   * Record a day of real learning activity and advance the streak. Idempotent
+   * within a day. Called by `complete()`; call it directly for other genuine
+   * learning actions. Deliberately NOT called on app open — a streak should
+   * mean "I learned", not "I launched the app".
+   */
+  async recordActivity(today: string = dayKey()): Promise<Profile> {
+    const profile = await this.ensureProfile();
+    const next = advanceStreak(profile, today);
+    if (next === profile || next.lastActiveDay === profile.lastActiveDay) {
+      return profile;
+    }
+    return this.updateProfile(next);
   }
 
   async setProgress(id: string, progress: Topic["progress"]): Promise<Topic> {
@@ -285,6 +303,10 @@ export class MapStore {
       name,
       activeRoadmapId: null,
       onboardedAt: null,
+      streakDays: 0,
+      bestStreak: 0,
+      lastActiveDay: null,
+      streakFreezes: 2,
       createdAt: ts,
       updatedAt: ts,
       rev: 0,

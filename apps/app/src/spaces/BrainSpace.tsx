@@ -1,6 +1,7 @@
 import { domainColor, GraphView, MasterDetail, STATUS, useAbh } from "@abh/ui";
 import { Brain } from "lucide-react";
 import { useMemo, useState } from "react";
+import { useCelebrate } from "../Celebration";
 import { buildGraphData } from "../lib/graphData";
 
 /**
@@ -12,7 +13,14 @@ export function BrainSpace() {
   const complete = useAbh((s) => s.complete);
   const setProgress = useAbh((s) => s.setProgress);
   const acceptProposal = useAbh((s) => s.acceptProposal);
+  const celebrate = useCelebrate();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+
+  // Completing a topic is the payoff moment — always show what it opened.
+  async function completeAndCelebrate(id: string) {
+    const { unlocked, streak } = await complete(id);
+    celebrate({ unlocked, streak, streakAdvanced: true });
+  }
 
   const { nodes, links } = useMemo(
     () => buildGraphData(topics, edges, statuses, proposals),
@@ -47,7 +55,7 @@ export function BrainSpace() {
             {status === "known" ? (
               <button onClick={() => void setProgress(topic.id, "not_started")} className="w-full rounded-lg border border-hairline py-2.5 text-sm font-semibold text-fg transition hover:bg-surface">✓ Known — undo</button>
             ) : (
-              <button onClick={() => void complete(topic.id)} disabled={status === "locked"} className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110 disabled:opacity-40">Mark known</button>
+              <button onClick={() => void completeAndCelebrate(topic.id)} disabled={status === "locked"} className="w-full rounded-lg bg-accent py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110 active:scale-[0.98] disabled:opacity-40">Mark known</button>
             )}
           </div>
         </>

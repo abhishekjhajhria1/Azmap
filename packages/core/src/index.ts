@@ -13,6 +13,7 @@
 
 export * from "./types.js";
 export * from "./ids.js";
+export * from "./streak.js";
 export * as graph from "./graph.js";
 export type { Graph, GraphIndex } from "./graph.js";
 export { MapStore } from "./store.js";
