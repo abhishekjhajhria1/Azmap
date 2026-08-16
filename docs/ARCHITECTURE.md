@@ -33,18 +33,28 @@ open?"* before you commit (`wouldUnlock`). That payoff moment is the product.
 ```
 abh/
 ├── packages/
-│   └── core/            @abh/core — the domain. Framework-agnostic TS.
+│   ├── core/            @abh/core — the domain + product logic. Framework-free TS.
+│   └── ui/              @abh/ui — design system: theme, adaptive shell,
+│                        WebGL GraphView (Sigma + graphology), reactive store.
 ├── apps/
-│   ├── website/         Next.js marketing site (live demo runs core)
+│   ├── app/             The product — Vite React PWA (local-first, offline)
+│   ├── website/         Next.js marketing site (live-demo hero)
 │   ├── extension/       WXT MV3 browser extension (capture → map)
-│   ├── mobile/          Flutter iOS + Android            (planned)
-│   └── desktop/         Tauri, all-OS                    (planned)
+│   ├── mobile/          Flutter iOS + Android, adaptive       (planned)
+│   └── desktop/         Tauri wraps apps/app                  (planned)
 └── docs/
 ```
 
-The JS/TS surfaces (`packages/*`, `website`, `extension`) form one pnpm
+The JS/TS surfaces (`packages/*`, `app`, `website`, `extension`) form one pnpm
 workspace. Flutter and Tauri manage their own toolchains but share the domain
 via the wire format (below).
+
+**One shared model, distinct experiences.** The **mind map / second brain is the
+superset** — everything you learn, ask, or capture is one graph in `@abh/core`.
+A **roadmap is a focused lens** over a namespaced slice of that graph, presented
+distraction-free. `apps/app` renders both as separate *spaces* over the single
+reactive store (`@abh/ui`'s `useAbh` → `MapStore` → IndexedDB); the Flutter app
+mirrors the same model and the same adaptive breakpoints.
 
 ## `@abh/core` — the shared brain
 
