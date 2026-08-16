@@ -1,37 +1,41 @@
-import LiveMap from "@/components/LiveMap";
+import HeroGraph from "@/components/HeroGraph";
 import { Audience, Eyebrow, Pillar, Section, Stat } from "@/components/ui";
+import { ThemeToggle } from "@abh/ui/lite";
 
 export default function Home() {
   return (
     <main className="overflow-x-hidden">
       {/* ---- Nav ---- */}
-      <header className="sticky top-0 z-50 border-b border-forest-800/60 bg-forest-950/80 backdrop-blur">
+      <header className="sticky top-0 z-50 border-b border-hairline bg-[var(--glass-bg)] [backdrop-filter:saturate(180%)_blur(20px)] [-webkit-backdrop-filter:saturate(180%)_blur(20px)]">
         <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
           <a href="#" className="flex items-center gap-2 font-bold tracking-tight">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-forest-600 text-parchment">
+            <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-ink">
               A
             </span>
             <span className="text-lg">ABH</span>
           </a>
-          <nav className="hidden items-center gap-7 text-sm text-forest-300 md:flex">
-            <a href="#product" className="transition hover:text-parchment">The product</a>
-            <a href="#map" className="transition hover:text-parchment">The map</a>
-            <a href="#who" className="transition hover:text-parchment">Who it's for</a>
-            <a href="#why" className="transition hover:text-parchment">Why it works</a>
+          <nav className="hidden items-center gap-7 text-sm text-muted md:flex">
+            <a href="#product" className="transition hover:text-fg">The product</a>
+            <a href="#map" className="transition hover:text-fg">The map</a>
+            <a href="#who" className="transition hover:text-fg">Who it's for</a>
+            <a href="#why" className="transition hover:text-fg">Why it works</a>
           </nav>
-          <a
-            href="#waitlist"
-            className="rounded-lg bg-amber px-4 py-2 text-sm font-semibold text-forest-950 transition hover:bg-amber-soft"
-          >
-            Get early access
-          </a>
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            <a
+              href="#waitlist"
+              className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-ink transition hover:brightness-110"
+            >
+              Get early access
+            </a>
+          </div>
         </div>
       </header>
 
       {/* ---- Hero ---- */}
       <div className="relative">
         <div className="bg-grid absolute inset-0 -z-10" />
-        <div className="absolute inset-x-0 top-0 -z-10 h-[600px] bg-gradient-to-b from-forest-800/40 to-transparent" />
+        <div className="absolute inset-x-0 top-0 -z-10 h-[600px] bg-gradient-to-b from-surface-2 to-transparent" />
         <Section className="pt-16 pb-14 sm:pt-24">
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div className="animate-fade-up">
@@ -39,7 +43,7 @@ export default function Home() {
               <h1 className="text-balance text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
                 Everything you learn, on one map that grows with you.
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-forest-300">
+              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
                 Name anything you want to learn and get a real path through it —
                 or let AI build one for a subject nobody has mapped yet. Every
                 step you finish opens the next. And the people who matter can see
@@ -48,25 +52,25 @@ export default function Home() {
               <div className="mt-8 flex flex-wrap items-center gap-4">
                 <a
                   href="#waitlist"
-                  className="rounded-lg bg-amber px-6 py-3 font-semibold text-forest-950 transition hover:bg-amber-soft"
+                  className="rounded-lg bg-accent px-6 py-3 font-semibold text-accent-ink transition hover:brightness-110"
                 >
                   Get early access
                 </a>
                 <a
                   href="#product"
-                  className="rounded-lg border border-forest-600 px-6 py-3 font-semibold text-parchment transition hover:bg-forest-800"
+                  className="rounded-lg border border-hairline px-6 py-3 font-semibold text-fg transition hover:bg-surface-2"
                 >
                   See how it works
                 </a>
               </div>
-              <p className="mt-6 text-sm text-forest-400">
+              <p className="mt-6 text-sm text-subtle">
                 Works offline. No account required. Your learning never leaves
                 your device.
               </p>
             </div>
 
             <div className="animate-fade-up [animation-delay:120ms]">
-              <LiveMap />
+              <HeroGraph />
             </div>
           </div>
         </Section>
@@ -79,7 +83,7 @@ export default function Home() {
           <h2 className="text-balance text-3xl font-bold sm:text-4xl">
             You learn constantly and keep almost none of it.
           </h2>
-          <p className="mt-6 text-lg leading-relaxed text-forest-300">
+          <p className="mt-6 text-lg leading-relaxed text-muted">
             An engineer picks up a framework. A doctor reads a new protocol. A
             student grinds a syllabus. Someone curious falls down a Wikipedia
             hole at 1am. All of it is real learning. None of it is connected to
@@ -93,13 +97,13 @@ export default function Home() {
             ["Note apps", "capture everything and organise nothing."],
             ["Roadmap sites", "show a beautiful path, then forget you the moment you close the tab."],
           ].map(([h, p]) => (
-            <div key={h} className="rounded-xl border border-forest-800 bg-forest-900/30 p-5">
-              <div className="font-semibold text-parchment">{h}</div>
-              <div className="mt-2 text-sm leading-relaxed text-forest-300">{p}</div>
+            <div key={h} className="rounded-xl border border-hairline bg-surface p-5">
+              <div className="font-semibold text-fg">{h}</div>
+              <div className="mt-2 text-sm leading-relaxed text-muted">{p}</div>
             </div>
           ))}
         </div>
-        <p className="mx-auto mt-10 max-w-2xl text-center text-lg font-medium text-parchment">
+        <p className="mx-auto mt-10 max-w-2xl text-center text-lg font-medium text-fg">
           Nothing holds what you know as a living thing. That&apos;s the gap ABH
           fills.
         </p>
@@ -130,7 +134,7 @@ export default function Home() {
             you have actually come.
           </Pillar>
         </div>
-        <div className="mt-8 rounded-xl border border-amber/30 bg-amber/5 p-5 text-center text-sm text-amber-soft">
+        <div className="mt-8 rounded-xl border border-accent bg-accent/5 p-5 text-center text-sm text-accent">
           Nothing AI proposes joins your map until you tap to accept it.
         </div>
       </Section>
@@ -144,12 +148,12 @@ export default function Home() {
               Because the connections are real, the app can answer a question
               nothing else can.
             </h2>
-            <p className="mt-6 text-lg leading-relaxed text-forest-300">
+            <p className="mt-6 text-lg leading-relaxed text-muted">
               &ldquo;What am I actually able to start right now?&rdquo; becomes a
               fact, not a guess. And finishing one topic visibly opens several
               others — the moment people come back for.
             </p>
-            <p className="mt-4 text-lg leading-relaxed text-forest-300">
+            <p className="mt-4 text-lg leading-relaxed text-muted">
               It also means the app is never finished with you. Read an
               explainer, import a roadmap, accept a suggestion, and the map
               absorbs it. After a year it isn&apos;t a course you took. It&apos;s
@@ -157,13 +161,13 @@ export default function Home() {
               currently produces.
             </p>
           </div>
-          <div className="rounded-2xl border border-forest-700/60 bg-forest-900/40 p-8">
-            <blockquote className="text-xl font-medium leading-relaxed text-parchment">
+          <div className="rounded-2xl border border-hairline bg-surface p-8">
+            <blockquote className="text-xl font-medium leading-relaxed text-fg">
               &ldquo;The prerequisite links are judgements about what genuinely
               blocks what. Scraping cannot produce them — and a wrong one is
               worse than none.&rdquo;
             </blockquote>
-            <p className="mt-4 text-sm text-forest-400">
+            <p className="mt-4 text-sm text-subtle">
               Why the graph is hard to copy.
             </p>
           </div>
@@ -177,7 +181,7 @@ export default function Home() {
           <h2 className="text-balance text-3xl font-bold sm:text-4xl">
             Deliberately not one audience.
           </h2>
-          <p className="mt-4 text-lg text-forest-300">
+          <p className="mt-4 text-lg text-muted">
             Four groups normally need four different products, because each is
             treated as a different content problem. They&apos;re not. They&apos;re
             the same problem — a person accumulating understanding over years with
@@ -205,13 +209,13 @@ export default function Home() {
 
       {/* ---- Second brain / capture ---- */}
       <Section className="py-20">
-        <div className="rounded-3xl border border-forest-700/60 bg-gradient-to-br from-forest-800/50 to-forest-950 p-8 sm:p-12">
+        <div className="rounded-3xl border border-hairline bg-gradient-to-br from-surface-2 to-bg p-8 sm:p-12">
           <div className="max-w-3xl">
             <Eyebrow>Where it&apos;s heading</Eyebrow>
             <h2 className="text-balance text-3xl font-bold sm:text-4xl">
               A second brain that gets denser every time you learn something.
             </h2>
-            <p className="mt-6 text-lg leading-relaxed text-forest-300">
+            <p className="mt-6 text-lg leading-relaxed text-muted">
               Everything you read, save, screenshot or copy is something you were
               learning — and today all of it is lost the moment you close the
               tab. ABH is built to catch it and put it somewhere it connects to
@@ -226,10 +230,10 @@ export default function Home() {
                 ["Web", "So a map can be opened, and shown, anywhere."],
               ].map(([h, p]) => (
                 <div key={h} className="flex gap-3">
-                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber" />
+                  <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-accent" />
                   <div>
-                    <div className="font-semibold text-parchment">{h}</div>
-                    <div className="text-sm text-forest-300">{p}</div>
+                    <div className="font-semibold text-fg">{h}</div>
+                    <div className="text-sm text-muted">{p}</div>
                   </div>
                 </div>
               ))}
@@ -269,7 +273,7 @@ export default function Home() {
 
       {/* ---- Built so far ---- */}
       <Section className="py-20">
-        <div className="rounded-3xl border border-forest-700/60 bg-forest-900/40 p-8 sm:p-12">
+        <div className="rounded-3xl border border-hairline bg-surface p-8 sm:p-12">
           <Eyebrow>Built so far</Eyebrow>
           <h2 className="max-w-2xl text-balance text-2xl font-bold sm:text-3xl">
             Not a mockup. A working app, built solo — now coming to every screen.
@@ -280,7 +284,7 @@ export default function Home() {
             <Stat value="13" label="full roadmaps, 6 countries, 3 languages" />
             <Stat value="288" label="vetted sources, 86 prerequisite links" />
           </div>
-          <p className="mt-8 max-w-2xl text-forest-300">
+          <p className="mt-8 max-w-2xl text-muted">
             AI is already in it — proposing new topics and answering questions in
             the context of what you&apos;re studying. Next: the browser extension
             and the web, so your map opens anywhere.
@@ -290,11 +294,11 @@ export default function Home() {
 
       {/* ---- CTA ---- */}
       <Section id="waitlist" className="py-20">
-        <div className="mx-auto max-w-2xl rounded-3xl border border-amber/30 bg-gradient-to-b from-forest-800/60 to-forest-950 p-10 text-center">
+        <div className="mx-auto max-w-2xl rounded-3xl border border-accent bg-gradient-to-b from-surface-2 to-bg p-10 text-center">
           <h2 className="text-balance text-3xl font-bold sm:text-4xl">
             Start the map you&apos;ll still be adding to in a year.
           </h2>
-          <p className="mt-4 text-lg text-forest-300">
+          <p className="mt-4 text-lg text-muted">
             Be first to the browser extension and the web app.
           </p>
           <form className="mx-auto mt-8 flex max-w-md flex-col gap-3 sm:flex-row">
@@ -302,31 +306,31 @@ export default function Home() {
               type="email"
               required
               placeholder="you@email.com"
-              className="w-full rounded-lg border border-forest-600 bg-forest-950 px-4 py-3 text-parchment outline-none placeholder:text-forest-500 focus:border-amber"
+              className="w-full rounded-lg border border-hairline bg-bg px-4 py-3 text-fg outline-none placeholder:text-subtle focus:border-accent"
             />
             <button
               type="submit"
-              className="shrink-0 rounded-lg bg-amber px-6 py-3 font-semibold text-forest-950 transition hover:bg-amber-soft"
+              className="shrink-0 rounded-lg bg-accent px-6 py-3 font-semibold text-accent-ink transition hover:brightness-110"
             >
               Get early access
             </button>
           </form>
-          <p className="mt-4 text-xs text-forest-400">
+          <p className="mt-4 text-xs text-subtle">
             No spam. One note when it&apos;s ready.
           </p>
         </div>
       </Section>
 
       {/* ---- Footer ---- */}
-      <footer className="border-t border-forest-800/60 py-10">
+      <footer className="border-t border-hairline py-10">
         <Section className="flex flex-col items-center justify-between gap-4 sm:flex-row">
-          <div className="flex items-center gap-2 text-sm text-forest-400">
-            <span className="grid h-6 w-6 place-items-center rounded bg-forest-700 text-xs font-bold text-parchment">
+          <div className="flex items-center gap-2 text-sm text-subtle">
+            <span className="grid h-6 w-6 place-items-center rounded bg-surface-2 text-xs font-bold text-fg">
               A
             </span>
             ABH — everything you learn, on one map.
           </div>
-          <p className="text-xs text-forest-500">
+          <p className="text-xs text-subtle">
             Built local-first. Your learning stays yours.
           </p>
         </Section>

@@ -160,6 +160,33 @@ export const Capture = z.object({
 });
 export type Capture = z.infer<typeof Capture>;
 
+/**
+ * The local user. A single on-device record — no login, no server. Holds who
+ * you are, which roadmap you're currently focused on, and onboarding state.
+ * Designed to grow into an account (add an optional remote id) when sync lands.
+ */
+export const Profile = z.object({
+  id: z.string(),
+  name: z.string().default(""),
+  /** The roadmap currently open in the focused runner, if any. */
+  activeRoadmapId: z.string().nullable().default(null),
+  onboardedAt: z.number().int().nullable().default(null),
+  /** Consecutive days with real learning activity. */
+  streakDays: z.number().int().nonnegative().default(0),
+  bestStreak: z.number().int().nonnegative().default(0),
+  /** Local day key ("YYYY-MM-DD") of the last activity, or null. */
+  lastActiveDay: z.string().nullable().default(null),
+  /**
+   * Grace days that auto-repair a single missed day. Forgiving by design — a
+   * streak you can never recover causes abandonment, not motivation.
+   */
+  streakFreezes: z.number().int().nonnegative().default(2),
+  createdAt: z.number().int(),
+  updatedAt: z.number().int(),
+  rev: z.number().int().nonnegative().default(0),
+});
+export type Profile = z.infer<typeof Profile>;
+
 /** The entire on-device dataset — the unit an export/import/sync moves. */
 export const MapSnapshot = z.object({
   version: z.literal(1),
@@ -169,6 +196,7 @@ export const MapSnapshot = z.object({
   suggestions: z.array(Suggestion),
   guardians: z.array(Guardian),
   captures: z.array(Capture),
+  profile: Profile.nullable().default(null),
   exportedAt: z.number().int(),
 });
 export type MapSnapshot = z.infer<typeof MapSnapshot>;

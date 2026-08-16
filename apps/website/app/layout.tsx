@@ -1,5 +1,9 @@
+import { ThemeProvider } from "@abh/ui/lite";
 import type { Metadata } from "next";
 import "./globals.css";
+
+// Set the theme before first paint so there's no flash of the wrong theme.
+const noFlash = `(function(){try{var t=localStorage.getItem('abh.theme');if(t==='dark'||t==='light')document.documentElement.setAttribute('data-theme',t);}catch(e){}})();`;
 
 export const metadata: Metadata = {
   title: "ABH — everything you learn, on one map that grows with you",
@@ -28,7 +32,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: noFlash }} />
+      </head>
+      <body>
+        <ThemeProvider>
+          <div className="abh-ambient" aria-hidden />
+          {children}
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

@@ -186,3 +186,52 @@ export function progressPercent(topics: Topic[]): number {
   const known = topics.filter((t) => t.progress === "known").length;
   return Math.round((known / topics.length) * 100);
 }
+
+/**
+ * The topics that should be *visible* on an evolving map — the mechanism
+ * behind "the mind map grows with you". You always see what you've touched
+ * (known / in-progress), what you can start now (available), and a `lookahead`
+ * of what those unlock next — but topics deep in the locked interior stay
+ * hidden until you approach them.
+ *
+ * `roots` (topics with no prerequisites) are always shown so a fresh roadmap
+ * isn't blank.
+ */
+export function revealedTopicIds(
+  graph: Graph,
+  opts: { lookahead?: number } = {},
+): Set<string> {
+  const lookahead = opts.lookahead ?? 1;
+  const index = indexGraph(graph);
+  const revealed = new Set<string>();
+
+  // Frontier: everything already touched or open, plus prerequisite-free roots.
+  const frontier: string[] = [];
+  for (const t of graph.topics) {
+    const touched =
+      t.progress === "known" ||
+      t.progress === "in_progress" ||
+      isAvailable(t.id, index);
+    const isRoot = (index.incoming.get(t.id) ?? []).length === 0;
+    if (touched || isRoot) {
+      revealed.add(t.id);
+      frontier.push(t.id);
+    }
+  }
+
+  // Grow outward `lookahead` hops so learners can see where they're heading.
+  let layer = frontier;
+  for (let hop = 0; hop < lookahead; hop++) {
+    const next: string[] = [];
+    for (const id of layer) {
+      for (const e of index.outgoing.get(id) ?? []) {
+        if (!revealed.has(e.to)) {
+          revealed.add(e.to);
+          next.push(e.to);
+        }
+      }
+    }
+    layer = next;
+  }
+  return revealed;
+}

@@ -140,3 +140,33 @@ describe("progressPercent", () => {
     ).toBe(33);
   });
 });
+
+describe("revealedTopicIds (the evolving map)", () => {
+  it("shows known, available, and a one-hop lookahead — but hides the deep interior", () => {
+    // a(known) -> b -> c -> d : b available, c is the lookahead, d hidden.
+    const g = {
+      topics: [topic("a", "known"), topic("b"), topic("c"), topic("d")],
+      edges: [edge("a", "b"), edge("b", "c"), edge("c", "d")],
+    };
+    const revealed = graph.revealedTopicIds(g, { lookahead: 1 });
+    expect([...revealed].sort()).toEqual(["a", "b", "c"]);
+    expect(revealed.has("d")).toBe(false);
+  });
+
+  it("grows as the learner progresses", () => {
+    const g = {
+      topics: [topic("a", "known"), topic("b"), topic("c"), topic("d")],
+      edges: [edge("a", "b"), edge("b", "c"), edge("c", "d")],
+    };
+    expect(graph.revealedTopicIds(g).has("d")).toBe(false);
+    // Complete b -> c becomes available and d enters the lookahead.
+    g.topics[1] = topic("b", "known");
+    expect(graph.revealedTopicIds(g).has("d")).toBe(true);
+  });
+
+  it("always reveals prerequisite-free roots so a fresh roadmap isn't blank", () => {
+    const g = { topics: [topic("a"), topic("b")], edges: [edge("a", "b")] };
+    const revealed = graph.revealedTopicIds(g);
+    expect(revealed.has("a")).toBe(true);
+  });
+});

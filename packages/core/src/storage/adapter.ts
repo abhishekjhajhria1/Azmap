@@ -13,6 +13,7 @@ import type {
   Edge,
   Guardian,
   MapSnapshot,
+  Profile,
   Roadmap,
   Suggestion,
   Topic,
@@ -56,6 +57,10 @@ export interface StorageAdapter {
   getCaptures(): Promise<Capture[]>;
   putCapture(c: Capture): Promise<void>;
   deleteCapture(id: string): Promise<void>;
+
+  // Profile — a single on-device record (null until onboarding).
+  getProfile(): Promise<Profile | null>;
+  putProfile(p: Profile): Promise<void>;
 
   /** Full-dataset read/replace — powers export, import, backup and sync. */
   exportSnapshot(): Promise<MapSnapshot>;
