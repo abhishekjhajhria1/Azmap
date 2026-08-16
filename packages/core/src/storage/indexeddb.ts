@@ -14,6 +14,7 @@ import type {
   Edge,
   Guardian,
   MapSnapshot,
+  Profile,
   Roadmap,
   Suggestion,
   Topic,
@@ -27,23 +28,31 @@ interface AbhDB extends DBSchema {
   suggestions: { key: string; value: Suggestion; indexes: { by_status: string } };
   guardians: { key: string; value: Guardian };
   captures: { key: string; value: Capture };
+  /** Singleton records (the profile) under fixed keys. */
+  meta: { key: string; value: Profile };
 }
 
 const DB_NAME = "abh";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
+const PROFILE_KEY = "profile";
 
 async function open(): Promise<IDBPDatabase<AbhDB>> {
   return openDB<AbhDB>(DB_NAME, DB_VERSION, {
-    upgrade(db) {
-      db.createObjectStore("topics", { keyPath: "id" });
-      const edges = db.createObjectStore("edges", { keyPath: "id" });
-      edges.createIndex("by_from", "from");
-      edges.createIndex("by_to", "to");
-      db.createObjectStore("roadmaps", { keyPath: "id" });
-      const sug = db.createObjectStore("suggestions", { keyPath: "id" });
-      sug.createIndex("by_status", "status");
-      db.createObjectStore("guardians", { keyPath: "id" });
-      db.createObjectStore("captures", { keyPath: "id" });
+    upgrade(db, oldVersion) {
+      if (oldVersion < 1) {
+        db.createObjectStore("topics", { keyPath: "id" });
+        const edges = db.createObjectStore("edges", { keyPath: "id" });
+        edges.createIndex("by_from", "from");
+        edges.createIndex("by_to", "to");
+        db.createObjectStore("roadmaps", { keyPath: "id" });
+        const sug = db.createObjectStore("suggestions", { keyPath: "id" });
+        sug.createIndex("by_status", "status");
+        db.createObjectStore("guardians", { keyPath: "id" });
+        db.createObjectStore("captures", { keyPath: "id" });
+      }
+      if (oldVersion < 2) {
+        db.createObjectStore("meta");
+      }
     },
   });
 }
@@ -115,6 +124,13 @@ export class IndexedDbStorage implements StorageAdapter {
     await (await this.dbp).delete("captures", id);
   }
 
+  async getProfile() {
+    return (await (await this.dbp).get("meta", PROFILE_KEY)) ?? null;
+  }
+  async putProfile(p: Profile) {
+    await (await this.dbp).put("meta", p, PROFILE_KEY);
+  }
+
   async exportSnapshot(): Promise<MapSnapshot> {
     return {
       version: 1,
@@ -124,6 +140,7 @@ export class IndexedDbStorage implements StorageAdapter {
       suggestions: await this.getSuggestions(),
       guardians: await this.getGuardians(),
       captures: await this.getCaptures(),
+      profile: await this.getProfile(),
       exportedAt: Date.now(),
     };
   }
@@ -132,7 +149,7 @@ export class IndexedDbStorage implements StorageAdapter {
     if (mode === "replace") await this.clear();
     const db = await this.dbp;
     const tx = db.transaction(
-      ["topics", "edges", "roadmaps", "suggestions", "guardians", "captures"],
+      ["topics", "edges", "roadmaps", "suggestions", "guardians", "captures", "meta"],
       "readwrite",
     );
     await Promise.all([
@@ -142,6 +159,7 @@ export class IndexedDbStorage implements StorageAdapter {
       ...snapshot.suggestions.map((s) => tx.objectStore("suggestions").put(s)),
       ...snapshot.guardians.map((g) => tx.objectStore("guardians").put(g)),
       ...snapshot.captures.map((c) => tx.objectStore("captures").put(c)),
+      ...(snapshot.profile ? [tx.objectStore("meta").put(snapshot.profile, PROFILE_KEY)] : []),
     ]);
     await tx.done;
   }
@@ -155,6 +173,7 @@ export class IndexedDbStorage implements StorageAdapter {
       "suggestions",
       "guardians",
       "captures",
+      "meta",
     ] as const;
     const tx = db.transaction(stores, "readwrite");
     await Promise.all(stores.map((s) => tx.objectStore(s).clear()));

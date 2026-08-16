@@ -23,6 +23,7 @@ export class MemoryStorage implements StorageAdapter {
   private suggestions = new Map<string, MapSnapshot["suggestions"][number]>();
   private guardians = new Map<string, MapSnapshot["guardians"][number]>();
   private captures = new Map<string, MapSnapshot["captures"][number]>();
+  private profile: MapSnapshot["profile"] = null;
 
   async getTopics() {
     return [...this.topics.values()];
@@ -84,6 +85,13 @@ export class MemoryStorage implements StorageAdapter {
     this.captures.delete(id);
   }
 
+  async getProfile() {
+    return this.profile;
+  }
+  async putProfile(p: NonNullable<MapSnapshot["profile"]>) {
+    this.profile = p;
+  }
+
   async exportSnapshot(): Promise<MapSnapshot> {
     return {
       version: 1,
@@ -93,6 +101,7 @@ export class MemoryStorage implements StorageAdapter {
       suggestions: await this.getSuggestions(),
       guardians: await this.getGuardians(),
       captures: await this.getCaptures(),
+      profile: this.profile,
       exportedAt: Date.now(),
     };
   }
@@ -106,6 +115,12 @@ export class MemoryStorage implements StorageAdapter {
     for (const s of snapshot.suggestions) this.suggestions.set(s.id, s);
     for (const g of snapshot.guardians) this.guardians.set(g.id, g);
     for (const c of snapshot.captures) this.captures.set(c.id, c);
+    // Profile: last-writer-by-rev, same rule as the graph records.
+    if (snapshot.profile) {
+      if (!this.profile || snapshot.profile.rev >= this.profile.rev) {
+        this.profile = snapshot.profile;
+      }
+    }
   }
 
   async clear() {
@@ -115,6 +130,7 @@ export class MemoryStorage implements StorageAdapter {
     this.suggestions.clear();
     this.guardians.clear();
     this.captures.clear();
+    this.profile = null;
   }
 }
 

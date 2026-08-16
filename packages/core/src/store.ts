@@ -14,17 +14,24 @@ import {
   newCaptureId,
   newEdgeId,
   newGuardianId,
+  newProfileId,
   newRoadmapId,
   newSuggestionId,
   newTopicId,
   now,
 } from "./ids.js";
+import { getRoadmap } from "./roadmaps/library.js";
+import { roadmapNodeId, seedEdgePairs } from "./roadmaps/lens.js";
+import type { RoadmapDef } from "./roadmaps/types.js";
+import type { ProposedTopic, SuggestionProvider } from "./suggest/index.js";
 import type { StorageAdapter } from "./storage/adapter.js";
 import {
   type Capture,
   type Edge,
   type Guardian,
   type MapStatus,
+  type Profile,
+  type Progress,
   type Roadmap,
   type Suggestion,
   Topic,
@@ -39,6 +46,9 @@ export interface NewTopicInput {
   origin?: TopicOrigin;
   tags?: string[];
   sources?: Topic["sources"];
+  /** Explicit id (for roadmap seeding); a fresh one is generated otherwise. */
+  id?: string;
+  progress?: Progress;
 }
 
 export class MapStore {
@@ -58,14 +68,16 @@ export class MapStore {
   async addTopic(input: NewTopicInput): Promise<Topic> {
     const ts = now();
     const topic = Topic.parse({
-      id: newTopicId(),
+      id: input.id ?? newTopicId(),
       title: input.title,
       summary: input.summary ?? "",
       whyItMatters: input.whyItMatters ?? "",
       unlocks: input.unlocks ?? "",
+      progress: input.progress ?? "not_started",
       origin: input.origin ?? "user",
       tags: input.tags ?? [],
       sources: input.sources ?? [],
+      completedAt: input.progress === "known" ? ts : undefined,
       createdAt: ts,
       updatedAt: ts,
       rev: 0,
@@ -207,6 +219,168 @@ export class MapStore {
     const topics = await this.storage.getTopics();
     const inRoadmap = topics.filter((t) => roadmap.topicIds.includes(t.id));
     return graph.progressPercent(inRoadmap);
+  }
+
+  /**
+   * Start following a roadmap: inflate its path into real nodes on the one
+   * graph (namespaced ids, so the mind map is the superset), wire the
+   * prerequisite edges, record the Roadmap, and focus it on the profile.
+   * Idempotent — starting an already-started roadmap just re-focuses it.
+   */
+  async startRoadmap(def: RoadmapDef): Promise<Roadmap> {
+    const existing = (await this.storage.getRoadmaps()).find((r) => r.id === def.id);
+    if (existing) {
+      await this.setActiveRoadmap(def.id);
+      return existing;
+    }
+
+    const topicIds: string[] = [];
+    for (const seed of def.path) {
+      const id = roadmapNodeId(def.id, seed.id);
+      topicIds.push(id);
+      await this.addTopic({
+        id,
+        title: seed.title,
+        whyItMatters: seed.why,
+        progress: seed.progress ?? "not_started",
+        origin: "curated",
+        tags: [seed.domain, `roadmap:${def.id}`],
+      });
+    }
+    for (const { from, to } of seedEdgePairs(def.id, def.path)) {
+      await this.addEdge(from, to, { origin: "curated" });
+    }
+
+    const ts = now();
+    const roadmap: Roadmap = {
+      id: def.id,
+      title: def.title,
+      domain: "",
+      description: def.blurb,
+      language: "en",
+      topicIds,
+      curated: true,
+      createdAt: ts,
+      updatedAt: ts,
+      rev: 0,
+    };
+    await this.storage.putRoadmap(roadmap);
+    await this.setActiveRoadmap(def.id);
+    return roadmap;
+  }
+
+  // ---- Profile (the local user) ------------------------------------------
+
+  async getProfile(): Promise<Profile | null> {
+    return this.storage.getProfile();
+  }
+
+  /** Load the profile, creating a fresh one on first run. */
+  async ensureProfile(name = ""): Promise<Profile> {
+    const existing = await this.storage.getProfile();
+    if (existing) return existing;
+    const ts = now();
+    const profile: Profile = {
+      id: newProfileId(),
+      name,
+      activeRoadmapId: null,
+      onboardedAt: null,
+      createdAt: ts,
+      updatedAt: ts,
+      rev: 0,
+    };
+    await this.storage.putProfile(profile);
+    return profile;
+  }
+
+  async updateProfile(
+    patch: Partial<Omit<Profile, "id" | "createdAt" | "rev">>,
+  ): Promise<Profile> {
+    const profile = await this.ensureProfile();
+    const updated: Profile = {
+      ...profile,
+      ...patch,
+      id: profile.id,
+      createdAt: profile.createdAt,
+      updatedAt: now(),
+      rev: profile.rev + 1,
+    };
+    await this.storage.putProfile(updated);
+    return updated;
+  }
+
+  async setActiveRoadmap(id: string | null): Promise<Profile> {
+    return this.updateProfile({ activeRoadmapId: id });
+  }
+
+  /** The roadmap def currently in focus, resolved from the library. */
+  async activeRoadmapDef(): Promise<RoadmapDef | null> {
+    const profile = await this.storage.getProfile();
+    if (!profile?.activeRoadmapId) return null;
+    return getRoadmap(profile.activeRoadmapId) ?? null;
+  }
+
+  // ---- Explore (the curious layer feeds the second brain) -----------------
+
+  /**
+   * Add a node by asking/exploring. It joins the one graph (the second brain);
+   * an optional soft edge links it to the node you were on, so sideways
+   * curiosity never gates a roadmap.
+   */
+  async explore(input: {
+    title: string;
+    why?: string;
+    domain?: string;
+    parentId?: string;
+  }): Promise<Topic> {
+    const topic = await this.addTopic({
+      title: input.title,
+      whyItMatters: input.why ?? "",
+      origin: "capture",
+      tags: [input.domain ?? "everyday"],
+    });
+    if (input.parentId) {
+      const has = (await this.storage.getTopics()).some((t) => t.id === input.parentId);
+      if (has) await this.addEdge(input.parentId, topic.id, { strength: "soft", origin: "capture" });
+    }
+    return topic;
+  }
+
+  // ---- Frontier proposals (live, deterministic; swappable for AI) ---------
+
+  /** Live suggestions from a provider, using the active roadmap as context. */
+  async proposals(provider: SuggestionProvider): Promise<ProposedTopic[]> {
+    const [g, roadmap] = await Promise.all([this.graph(), this.activeRoadmapDef()]);
+    return provider.propose({ graph: g, roadmap: roadmap ?? undefined });
+  }
+
+  /**
+   * Accept a live proposal onto the map — creates the namespaced topic + its
+   * prerequisite edges and folds it into its roadmap. The user-tap gate that
+   * keeps AI from ever writing to the map unasked.
+   */
+  async acceptProposal(p: ProposedTopic): Promise<Topic> {
+    const topic = await this.addTopic({
+      id: p.nodeId,
+      title: p.title,
+      whyItMatters: p.why,
+      origin: "ai",
+      tags: [p.domain, `roadmap:${p.roadmapId}`],
+    });
+    for (const from of p.needs) {
+      await this.addEdge(from, p.nodeId, { origin: "ai" });
+    }
+    const roadmaps = await this.storage.getRoadmaps();
+    const roadmap = roadmaps.find((r) => r.id === p.roadmapId);
+    if (roadmap && !roadmap.topicIds.includes(p.nodeId)) {
+      await this.storage.putRoadmap({
+        ...roadmap,
+        topicIds: [...roadmap.topicIds, p.nodeId],
+        updatedAt: now(),
+        rev: roadmap.rev + 1,
+      });
+    }
+    return topic;
   }
 
   // ---- Suggestions (the "AI proposes, you accept" rule) -------------------

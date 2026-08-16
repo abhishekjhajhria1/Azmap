@@ -19,3 +19,18 @@ export { MapStore } from "./store.js";
 export type { NewTopicInput } from "./store.js";
 export type { StorageAdapter, Collection } from "./storage/adapter.js";
 export { MemoryStorage } from "./storage/memory.js";
+
+// Product feature modules (moved into core so every surface reuses them).
+export * from "./roadmaps/index.js";
+export {
+  FrontierSuggestionProvider,
+  type SuggestionProvider,
+  type SuggestionInput,
+  type ProposedTopic,
+} from "./suggest/index.js";
+export {
+  LocalOnlySync,
+  type SyncAdapter,
+  type Delta,
+  type GuardianLink,
+} from "./sync/index.js";
