@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: #0a1a12;
+  color: #f4f1e8;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior: none;
+}
+
+.bg-grid {
+  background-image:
+    linear-gradient(to right, rgba(116, 198, 157, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(116, 198, 157, 0.05) 1px, transparent 1px);
+  background-size: 44px 44px;
+}

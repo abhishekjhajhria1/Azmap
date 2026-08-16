@@ -83,7 +83,9 @@ export default function GraphView({
       labelColor: { color: "#e7ecdf" },
       labelFont: "ui-sans-serif, system-ui, sans-serif",
       labelSize: 12,
+      labelRenderedSizeThreshold: 0.1,
       defaultEdgeColor: "rgba(116,198,157,0.18)",
+      stagePadding: 80,
       zIndex: true,
     });
     sigmaRef.current = renderer;
@@ -177,8 +179,12 @@ export default function GraphView({
       });
       layout.start();
       layoutRef.current = layout;
-      // Let it settle, then stop to save CPU (worker keeps the UI smooth).
-      window.setTimeout(() => layout.stop(), 2200);
+      // Let it settle, then stop to save CPU (worker keeps the UI smooth) and
+      // frame the whole graph so nothing sits clipped at the edges.
+      window.setTimeout(() => {
+        layout.stop();
+        renderer.getCamera().animatedReset();
+      }, 2200);
     }
     renderer.refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
