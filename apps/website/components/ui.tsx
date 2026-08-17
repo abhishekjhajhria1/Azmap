@@ -16,9 +16,14 @@ export function Section({
   );
 }
 
+/**
+ * Deliberately not accent-coloured: the blue marks the one thing you should
+ * click on a screen, and spending it on every section label spends it on
+ * nothing.
+ */
 export function Eyebrow({ children }: { children: ReactNode }) {
   return (
-    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+    <p className="mb-3 text-xs font-semibold uppercase tracking-[0.2em] text-subtle">
       {children}
     </p>
   );

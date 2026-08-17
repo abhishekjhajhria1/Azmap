@@ -108,7 +108,6 @@ export function BrainSpace({ focusTopicId, onFocusHandled }: {
 
   const master = (
     <div className="absolute inset-0">
-      <div className="bg-grid absolute inset-0 opacity-40" />
       {nodes.length === 0 ? (
         <div className="grid h-full place-items-center px-6 text-center">
           <div>
@@ -136,6 +135,37 @@ export function BrainSpace({ focusTopicId, onFocusHandled }: {
           query={query} fitToken={fitToken} zoomToken={zoomToken}
           className="absolute inset-0 h-full w-full"
         />
+      )}
+
+      {/* A legend, because colour carries meaning here. Every real map has one,
+          and without it the reader has to guess what green means. Top-right, out
+          of the way of both the rail and the toolbar. */}
+      {nodes.length > 0 && (
+        <div
+          className="float absolute hidden select-none px-3.5 py-2.5 sm:block"
+          style={{ right: "var(--float-inset)", top: "var(--float-inset)" }}
+        >
+          <div className="t-eyebrow mb-1.5">Legend</div>
+          <ul className="space-y-1">
+            {[
+              ["known", "Surveyed", "var(--known)"],
+              ["available", "Open to you now", "var(--available)"],
+              ["locked", "Needs groundwork", "var(--fg-subtle)"],
+            ].map(([key, label, dot]) => (
+              <li key={key} className="flex items-center gap-2 text-[11.5px] text-muted">
+                <span className="h-2 w-2 rounded-full" style={{ background: dot }} />
+                {label}
+              </li>
+            ))}
+            <li className="flex items-center gap-2 text-[11.5px] text-muted">
+              <span
+                className="h-2 w-2 rounded-full border border-dashed"
+                style={{ borderColor: "var(--ai)" }}
+              />
+              Proposed
+            </li>
+          </ul>
+        </div>
       )}
 
       {/* One floating toolbar, not two clusters. Search and camera belong to the

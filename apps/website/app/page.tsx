@@ -40,7 +40,7 @@ export default function Home() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div className="animate-fade-up">
               <Eyebrow>The learning map</Eyebrow>
-              <h1 className="text-balance text-[40px] font-bold leading-[1.03] tracking-[-0.032em] sm:text-[52px] lg:text-[62px]">
+              <h1 className="t-serif text-balance text-[40px] leading-[1.02] tracking-[-0.026em] sm:text-[52px] lg:text-[62px]">
                 Everything you learn, on one map that grows with you.
               </h1>
               <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-muted">
@@ -80,7 +80,7 @@ export default function Home() {
       <Section id="problem" className="py-20">
         <div className="mx-auto max-w-3xl text-center">
           <Eyebrow>The problem</Eyebrow>
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             You learn constantly and keep almost none of it.
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-muted">
@@ -113,7 +113,7 @@ export default function Home() {
       <Section id="product" className="py-20">
         <div className="max-w-2xl">
           <Eyebrow>The product</Eyebrow>
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             Three things that only work because they&apos;re the same thing.
           </h2>
         </div>
@@ -144,7 +144,7 @@ export default function Home() {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
             <Eyebrow>Why the map is the point</Eyebrow>
-            <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+            <h2 className="t-serif text-balance text-3xl sm:text-4xl">
               Because the connections are real, the app can answer a question
               nothing else can.
             </h2>
@@ -178,7 +178,7 @@ export default function Home() {
       <Section id="who" className="py-20">
         <div className="max-w-2xl">
           <Eyebrow>Who it&apos;s for</Eyebrow>
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             Deliberately not one audience.
           </h2>
           <p className="mt-4 text-lg text-muted">
@@ -212,7 +212,7 @@ export default function Home() {
         <div className="rounded-[26px] bg-surface-2 p-8 shadow-[var(--e1)] sm:p-12">
           <div className="max-w-3xl">
             <Eyebrow>Where it&apos;s heading</Eyebrow>
-            <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+            <h2 className="t-serif text-balance text-3xl sm:text-4xl">
               A second brain that gets denser every time you learn something.
             </h2>
             <p className="mt-6 text-lg leading-relaxed text-muted">
@@ -246,7 +246,7 @@ export default function Home() {
       <Section id="why" className="py-20">
         <div className="max-w-2xl">
           <Eyebrow>Why this can work</Eyebrow>
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             The advantages are structural, not features.
           </h2>
         </div>
@@ -275,7 +275,7 @@ export default function Home() {
       <Section className="py-20">
         <div className="rounded-[26px] bg-surface p-8 shadow-[var(--e2)] sm:p-12">
           <Eyebrow>Built so far</Eyebrow>
-          <h2 className="max-w-2xl text-balance text-2xl font-bold sm:text-3xl">
+          <h2 className="t-serif max-w-2xl text-balance text-2xl sm:text-3xl">
             Not a mockup. A working app, built solo — now coming to every screen.
           </h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -295,7 +295,7 @@ export default function Home() {
       {/* ---- CTA ---- */}
       <Section id="waitlist" className="py-20">
         <div className="mx-auto max-w-2xl rounded-[26px] bg-surface p-10 text-center shadow-[var(--e3)]">
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             Start the map you&apos;ll still be adding to in a year.
           </h2>
           <p className="mt-4 text-lg text-muted">

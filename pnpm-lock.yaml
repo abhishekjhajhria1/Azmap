@@ -23,6 +23,9 @@ importers:
       '@abh/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@fontsource-variable/fraunces':
+        specifier: ^5.3.0
+        version: 5.3.0
       '@fontsource-variable/inter':
         specifier: ^5.3.0
         version: 5.3.0
@@ -44,7 +47,7 @@ importers:
         version: 19.2.4(@types/react@19.2.18)
       '@vitejs/plugin-react':
         specifier: 4.3.4
-        version: 4.3.4(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0))
+        version: 4.3.4(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0))
       autoprefixer:
         specifier: ^10.4.20
         version: 10.5.4(postcss@8.5.26)
@@ -59,10 +62,10 @@ importers:
         version: 5.9.3
       vite:
         specifier: ^6.0.7
-        version: 6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0)
+        version: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0)
       vite-plugin-pwa:
         specifier: ^0.21.1
-        version: 0.21.2(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0))(workbox-build@7.4.1(@types/babel__core@7.20.5))(workbox-window@7.4.1)
+        version: 0.21.2(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0))(workbox-build@7.4.1(@types/babel__core@7.20.5))(workbox-window@7.4.1)
 
   apps/extension:
     dependencies:
@@ -109,6 +112,9 @@ importers:
       '@abh/ui':
         specifier: workspace:*
         version: link:../../packages/ui
+      '@fontsource-variable/fraunces':
+        specifier: ^5.3.0
+        version: 5.3.0
       next:
         specifier: ^15.1.6
         version: 15.5.23(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -1050,6 +1056,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@fontsource-variable/fraunces@5.3.0':
+    resolution: {integrity: sha512-9BYGySn4AHEJdgp9Z28tQ3X+laJMEOITXkQarZXeloWQZDq5oOvXJ3kDA8c7MGIfpogIaZfjrQBqmda8POOCKA==}
 
   '@fontsource-variable/inter@5.3.0':
     resolution: {integrity: sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==}
@@ -4954,6 +4963,8 @@ snapshots:
   '@esbuild/win32-x64@0.25.12':
     optional: true
 
+  '@fontsource-variable/fraunces@5.3.0': {}
+
   '@fontsource-variable/inter@5.3.0': {}
 
   '@img/colour@1.1.0':
@@ -5317,17 +5328,6 @@ snapshots:
   '@types/trusted-types@2.0.7': {}
 
   '@types/webextension-polyfill@0.12.5': {}
-
-  '@vitejs/plugin-react@4.3.4(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0))':
-    dependencies:
-      '@babel/core': 7.29.7
-      '@babel/plugin-transform-react-jsx-self': 7.29.7(@babel/core@7.29.7)
-      '@babel/plugin-transform-react-jsx-source': 7.29.7(@babel/core@7.29.7)
-      '@types/babel__core': 7.20.5
-      react-refresh: 0.14.2
-      vite: 6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0)
-    transitivePeerDependencies:
-      - supports-color
 
   '@vitejs/plugin-react@4.3.4(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0))':
     dependencies:
@@ -7758,12 +7758,12 @@ snapshots:
       - supports-color
       - terser
 
-  vite-plugin-pwa@0.21.2(vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0))(workbox-build@7.4.1(@types/babel__core@7.20.5))(workbox-window@7.4.1):
+  vite-plugin-pwa@0.21.2(vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0))(workbox-build@7.4.1(@types/babel__core@7.20.5))(workbox-window@7.4.1):
     dependencies:
       debug: 4.4.3
       pretty-bytes: 6.1.1
       tinyglobby: 0.2.17
-      vite: 6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0)
+      vite: 6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0)
       workbox-build: 7.4.1(@types/babel__core@7.20.5)
       workbox-window: 7.4.1
     transitivePeerDependencies:
@@ -7777,20 +7777,6 @@ snapshots:
     optionalDependencies:
       '@types/node': 22.20.1
       fsevents: 2.3.3
-      terser: 5.50.0
-
-  vite@6.4.3(@types/node@22.20.1)(jiti@1.21.7)(terser@5.50.0):
-    dependencies:
-      esbuild: 0.25.12
-      fdir: 6.5.0(picomatch@4.0.5)
-      picomatch: 4.0.5
-      postcss: 8.5.26
-      rollup: 4.62.4
-      tinyglobby: 0.2.17
-    optionalDependencies:
-      '@types/node': 22.20.1
-      fsevents: 2.3.3
-      jiti: 1.21.7
       terser: 5.50.0
 
   vite@6.4.3(@types/node@22.20.1)(jiti@2.7.0)(terser@5.50.0):

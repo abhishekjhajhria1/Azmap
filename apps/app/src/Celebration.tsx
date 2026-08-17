@@ -1,5 +1,5 @@
 import type { Topic } from "@abh/core";
-import { Flame, Sparkles } from "lucide-react";
+import { Flag, Flame } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 
 /**
@@ -61,21 +61,34 @@ export function CelebrationProvider({ children }: { children: ReactNode }) {
         >
           <div className="glass rounded-2xl px-4 py-3.5">
             <div className="flex items-start gap-3">
-              <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent">
-                <Sparkles size={18} />
+              {/* A flag, not sparkles — sparkles means "AI" everywhere else in
+                  this product, and this is you claiming ground. */}
+              <span
+                className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl text-accent"
+                style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)" }}
+              >
+                <Flag size={17} />
               </span>
               <div className="min-w-0 flex-1">
                 {payload.unlocked.length > 0 ? (
                   <>
-                    <div className="text-sm font-semibold">
-                      You unlocked {payload.unlocked.length}{" "}
-                      {payload.unlocked.length === 1 ? "topic" : "topics"}
+                    <div className="t-eyebrow" style={{ color: "var(--accent)" }}>
+                      New ground open
                     </div>
+                    {/* The chips arrive one after another, so the cascade reads
+                        as a consequence of what you just did rather than a
+                        notification that appeared. This is the one moment in
+                        the product allowed to be theatrical. */}
                     <div className="mt-1.5 flex flex-wrap gap-1.5">
-                      {payload.unlocked.slice(0, 4).map((t) => (
+                      {payload.unlocked.slice(0, 4).map((t, i) => (
                         <span
                           key={t.id}
-                          className="rounded-full bg-accent/12 px-2.5 py-1 text-[11px] font-medium text-accent"
+                          className="rounded-full px-2.5 py-1 text-[11px] font-medium text-accent"
+                          style={{
+                            background: "color-mix(in srgb, var(--accent) 12%, transparent)",
+                            animation: `unlockIn 380ms cubic-bezier(.2,.9,.3,1.2) both`,
+                            animationDelay: `${90 + i * 70}ms`,
+                          }}
                         >
                           {t.title}
                         </span>
@@ -88,7 +101,7 @@ export function CelebrationProvider({ children }: { children: ReactNode }) {
                     </div>
                   </>
                 ) : (
-                  <div className="text-sm font-semibold">Nice — that's another one known</div>
+                  <div className="text-sm font-semibold">Surveyed. Nothing new opened yet.</div>
                 )}
 
                 {payload.streak > 1 && (

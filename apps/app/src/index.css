@@ -1,5 +1,6 @@
 @import "@abh/ui/theme.css";
 @import "@fontsource-variable/inter";
+@import "@fontsource-variable/fraunces";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -9,7 +10,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--fg);
-  font-family: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-ui);
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   letter-spacing: -0.011em;
   -webkit-font-smoothing: antialiased;
@@ -17,12 +18,6 @@ body {
   overscroll-behavior: none;
 }
 
-/* Faint dotted texture, tuned per theme via token opacity. */
-.bg-grid {
-  background-image:
-    radial-gradient(var(--hairline) 1px, transparent 1px);
-  background-size: 22px 22px;
-}
 
 /* Motion. Transform and opacity only, so a space change never costs layout —
    these run over a live WebGL canvas.
@@ -37,6 +32,13 @@ body {
 /* The document moves between spaces; the chrome never does. */
 @keyframes spaceIn {
   from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* The signature moment: ground opening up after you complete something. The
+   overshoot is deliberate and is the only place in the product that uses one. */
+@keyframes unlockIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.94); }
   to   { opacity: 1; transform: none; }
 }
 

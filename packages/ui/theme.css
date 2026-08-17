@@ -1,16 +1,30 @@
 /**
- * ABH design tokens — one semantic system, switched light/dark.
+ * ABH design tokens.
  *
- * The direction: **a quiet document, floating on glass.** Content is a calm,
- * dense, typographic document. Every piece of chrome — rail, dock, omnibar,
- * canvas controls — is translucent material floating *above* it, never welded
- * to a screen edge. Depth comes from light and blur; hierarchy from type and
- * space; colour is near-monochrome with ONE blue accent, spent on the single
- * most important thing on a screen and nowhere else.
+ * ## The concept: a survey of what you know
  *
- * Green and violet are semantic only: known/success and AI. Tokens are consumed
- * by Tailwind (via CSS-var colours), by @abh/ui's inline styles, and by the
- * graph (read at runtime — see theme.ts).
+ * ABH is cartography. Not a checklist app with a graph bolted on — a map of a
+ * mind, where what you can learn next is the *frontier* of what you've already
+ * surveyed, and everything past it is unmapped ground. The interface takes that
+ * literally, because a product with a point of view beats a product that
+ * defaults to whatever is fashionable:
+ *
+ * - **The page is a survey sheet.** A faint contour field, not a blurred
+ *   gradient. Gradient orbs are the house style of every generated landing page
+ *   on earth; a drawn ground says someone decided.
+ * - **Display type is set in Fraunces**, a serif with actual opinions — old
+ *   atlases and field notebooks were set in serifs, and it gives the product a
+ *   voice next to Inter's neutrality. Inter still does all the work: UI, rows,
+ *   labels, numbers.
+ * - **Numbers are tabular everywhere.** Progress, counts, coordinates. A survey
+ *   that can't keep its figures in a column isn't a survey.
+ * - **Chrome floats above the sheet in glass.** That's the modern half, and it
+ *   stays: rail, dock, omnibar, sheets. Content never floats; chrome always
+ *   does.
+ *
+ * Colour is near-monochrome with ONE blue accent, spent on the single most
+ * important thing on a screen and nowhere else. Green and violet are semantic
+ * only: known/success and AI.
  *
  * Theme resolution:
  *   :root                          → light
@@ -23,9 +37,12 @@
 
   /* True neutrals. No beige, no cream — those read as institutional. */
   --bg: #fbfbfd;
-  --ambient-1: rgba(10, 132, 255, 0.09);
-  --ambient-2: rgba(124, 92, 255, 0.07);
-  --ambient-3: rgba(10, 132, 255, 0.05);
+  --ambient-1: rgba(10, 132, 255, 0.07);
+  --ambient-2: rgba(124, 92, 255, 0.055);
+  /* The drawn ground: plotted rules and contour lines. */
+  --rule: rgba(9, 9, 11, 0.035);
+  --rule-strong: rgba(9, 9, 11, 0.06);
+  --contour: rgba(9, 9, 11, 0.045);
 
   --surface: #ffffff;
   --surface-2: #f1f2f4;
@@ -79,6 +96,10 @@
   --r-sm: 12px;   /* small controls */
   /* How far floating chrome sits off the edge. Chrome never touches an edge. */
   --float-inset: 16px;
+  /* Two families, one job each: the serif has the voice, Inter does the work. */
+  --font-display: "Fraunces Variable", ui-serif, Georgia, "Times New Roman", serif;
+  --font-ui: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+
   /* The rail's two widths. */
   --rail-w: 264px;
   --rail-w-collapsed: 68px;
@@ -109,9 +130,11 @@
     /* The planes are deliberately separated: a card at --surface must read as
        a surface against --bg without needing an outline to prove it. */
     --bg: #08080a;
-    --ambient-1: rgba(10, 132, 255, 0.18);
-    --ambient-2: rgba(124, 92, 255, 0.15);
-    --ambient-3: rgba(48, 209, 88, 0.07);
+    --ambient-1: rgba(10, 132, 255, 0.16);
+    --ambient-2: rgba(124, 92, 255, 0.13);
+    --rule: rgba(255, 255, 255, 0.028);
+    --rule-strong: rgba(255, 255, 255, 0.05);
+    --contour: rgba(255, 255, 255, 0.035);
 
     --surface: #161619;
     --surface-2: #212126;
@@ -155,9 +178,11 @@
   color-scheme: dark;
 
   --bg: #08080a;
-  --ambient-1: rgba(10, 132, 255, 0.18);
-  --ambient-2: rgba(124, 92, 255, 0.15);
-  --ambient-3: rgba(48, 209, 88, 0.07);
+  --ambient-1: rgba(10, 132, 255, 0.16);
+  --ambient-2: rgba(124, 92, 255, 0.13);
+  --rule: rgba(255, 255, 255, 0.028);
+  --rule-strong: rgba(255, 255, 255, 0.05);
+  --contour: rgba(255, 255, 255, 0.035);
 
   --surface: #161619;
   --surface-2: #212126;
@@ -207,11 +232,21 @@ body {
 /* ---- Craft primitives -------------------------------------------------
    Hierarchy comes from type, space and light — not from outlining boxes. */
 
-/* Display type: big, tight, confident. Onboarding and marketing only. */
-.t-hero    { font-size: var(--t-hero);    line-height: 1.02; letter-spacing: -0.03em;  font-weight: 680; }
-.t-display { font-size: var(--t-display); line-height: 1.06; letter-spacing: -0.028em; font-weight: 680; }
-.t-title1  { font-size: var(--t-title1);  line-height: 1.12; letter-spacing: -0.024em; font-weight: 660; }
-.t-title2  { font-size: var(--t-title2);  line-height: 1.18; letter-spacing: -0.019em; font-weight: 650; }
+/* Display type — set in the serif.
+   Fraunces has a `SOFT` and an optical-size axis; at display sizes we want it
+   tight and a touch wonky, which is where its character lives. Below title3 we
+   hand back to Inter: a serif at 15px in a dense row is illegible affectation,
+   not personality. */
+.t-hero, .t-display, .t-title1, .t-title2 {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 20, "WONK" 1, "opsz" 96;
+  font-feature-settings: "ss01";
+}
+.t-hero    { font-size: var(--t-hero);    line-height: 1.0;  letter-spacing: -0.028em; font-weight: 620; }
+.t-display { font-size: var(--t-display); line-height: 1.05; letter-spacing: -0.024em; font-weight: 620; }
+.t-title1  { font-size: var(--t-title1);  line-height: 1.14; letter-spacing: -0.018em; font-weight: 600; }
+.t-title2  { font-size: var(--t-title2);  line-height: 1.22; letter-spacing: -0.013em; font-weight: 600; }
+/* Back to the workhorse from here down. */
 .t-title3  { font-size: var(--t-title3);  line-height: 1.25; letter-spacing: -0.014em; font-weight: 640; }
 .t-headline{ font-size: var(--t-headline);line-height: 1.35; letter-spacing: -0.011em; font-weight: 620; }
 .t-body    { font-size: var(--t-body);    line-height: 1.55; letter-spacing: -0.008em; font-weight: 420; }
@@ -363,8 +398,18 @@ body {
   backdrop-filter: blur(2px);
 }
 
-/* Calm ambient backdrop so the glass blur has something to blur. Three drifting
-   fields, no animation — motion here would compete with the content. */
+/* ---- The survey sheet -------------------------------------------------
+   The ground the whole product sits on.
+
+   This used to be three blurred gradient orbs. Those are the single most
+   recognisable tell of a generated interface — every AI landing page has the
+   same purple-and-blue bokeh — and they say nothing about what this product is.
+   A survey sheet does: a fine measured grid with heavier rules every fifth
+   line, and contour rings where the land rises. It is drawn, not glowed.
+
+   All of it is CSS gradients: no images, no canvas, nothing to download, and
+   it costs one paint. One faint tint survives so the glass has something
+   coloured to pick up. */
 .abh-ambient {
   position: fixed;
   inset: 0;
@@ -372,35 +417,48 @@ body {
   background: var(--bg);
   overflow: hidden;
 }
-.abh-ambient::before,
+
+/* The grid: 1px rules at 28px, heavier every 5th, like a plotted sheet. */
+.abh-ambient::before {
+  content: "";
+  position: absolute;
+  inset: -2px;
+  background-image:
+    linear-gradient(to right, var(--rule-strong) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rule-strong) 1px, transparent 1px),
+    linear-gradient(to right, var(--rule) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--rule) 1px, transparent 1px);
+  background-size: 140px 140px, 140px 140px, 28px 28px, 28px 28px;
+  /* Fade the grid out toward the bottom-right so it never fights the content. */
+  -webkit-mask-image: radial-gradient(120% 100% at 12% 0%, #000 15%, transparent 78%);
+  mask-image: radial-gradient(120% 100% at 12% 0%, #000 15%, transparent 78%);
+}
+
+/* Contours: concentric rings where the ground rises. Two centres, offset, so
+   the pattern never reads as a target. */
 .abh-ambient::after {
   content: "";
   position: absolute;
-  width: 60vmax;
-  height: 60vmax;
-  border-radius: 50%;
-  filter: blur(80px);
+  inset: 0;
+  background-image:
+    repeating-radial-gradient(circle at 82% 18%, transparent 0 46px, var(--contour) 46px 47px),
+    repeating-radial-gradient(circle at 68% 96%, transparent 0 62px, var(--contour) 62px 63px);
+  -webkit-mask-image: radial-gradient(90% 80% at 85% 25%, #000 0%, transparent 70%),
+                      radial-gradient(80% 70% at 68% 100%, #000 0%, transparent 70%);
+  mask-image: radial-gradient(90% 80% at 85% 25%, #000 0%, transparent 70%),
+              radial-gradient(80% 70% at 68% 100%, #000 0%, transparent 70%);
+  -webkit-mask-composite: source-over;
+  mask-composite: add;
 }
-.abh-ambient::before {
-  top: -20vmax;
-  left: -10vmax;
-  background: radial-gradient(circle at center, var(--ambient-1), transparent 70%);
-}
-.abh-ambient::after {
-  bottom: -25vmax;
-  right: -15vmax;
-  background: radial-gradient(circle at center, var(--ambient-2), transparent 70%);
-}
-/* The third field, on a child so it can sit between the other two. */
+
+/* One faint wash of colour, so the glass has something to catch. Kept as a
+   child element so it layers under both drawn fields. */
 .abh-ambient > i {
   position: absolute;
-  top: 35%;
-  right: 18%;
-  width: 34vmax;
-  height: 34vmax;
-  border-radius: 50%;
-  filter: blur(90px);
-  background: radial-gradient(circle at center, var(--ambient-3), transparent 70%);
+  inset: 0;
+  background:
+    radial-gradient(70vmax 55vmax at 8% -10%, var(--ambient-1), transparent 62%),
+    radial-gradient(55vmax 45vmax at 96% 108%, var(--ambient-2), transparent 62%);
 }
 
 /* Respect the system settings. Reduced transparency is a real accessibility
