@@ -22,23 +22,94 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* The popup is a floating card, not a slab welded to the window edges. */
+/* The survey field, at popup scale.
+ *
+ * Worth being honest about what this is and isn't: a browser popup is its own
+ * opaque OS window, so it can never be see-through to the *page* behind it —
+ * `backdrop-filter` on the popup has no page to sample. What it can have is its
+ * own ground, and then genuinely frost it: the panel below carries a real
+ * `backdrop-filter`, and what it blurs is this. The grid stays crisp in the
+ * margin around the panel and goes soft underneath it, which is the whole tell
+ * that says glass rather than tint.
+ *
+ * Two changes from the app's ambient, both because this canvas is 372px wide:
+ * rules at 22px rather than 28px (a coarse grid in a small window reads as
+ * texture, not a plotted sheet), and stronger ink — the app's values are tuned
+ * to survive behind a full screen of content, and here they'd vanish under the
+ * panel's blur before they ever reached the eye.
+ */
+.abh-ambient {
+  --rule: rgba(9, 9, 11, 0.05);
+  --rule-strong: rgba(9, 9, 11, 0.09);
+  --contour: rgba(9, 9, 11, 0.055);
+  --ambient-1: rgba(10, 132, 255, 0.13);
+  --ambient-2: rgba(124, 92, 255, 0.1);
+}
+.abh-ambient::before {
+  background-size: 110px 110px, 110px 110px, 22px 22px, 22px 22px;
+  /* The app fades its grid out toward the bottom-right so it never fights a
+     document. There's no document here — the panel does that job — so the sheet
+     stays whole and only softens at the far corner. */
+  -webkit-mask-image: radial-gradient(140% 115% at 8% 0%, #000 45%, transparent 100%);
+  mask-image: radial-gradient(140% 115% at 8% 0%, #000 45%, transparent 100%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .abh-ambient {
+    --rule: rgba(255, 255, 255, 0.045);
+    --rule-strong: rgba(255, 255, 255, 0.08);
+    --contour: rgba(255, 255, 255, 0.055);
+    --ambient-1: rgba(10, 132, 255, 0.2);
+    --ambient-2: rgba(124, 92, 255, 0.16);
+  }
+}
+:root[data-theme="dark"] .abh-ambient {
+  --rule: rgba(255, 255, 255, 0.045);
+  --rule-strong: rgba(255, 255, 255, 0.08);
+  --contour: rgba(255, 255, 255, 0.055);
+  --ambient-1: rgba(10, 132, 255, 0.2);
+  --ambient-2: rgba(124, 92, 255, 0.16);
+}
+
+/* The popup is a floating pane of frosted glass, not a slab welded to the
+   window edges. The inset hairline on the top edge is the specular catch that
+   makes a translucent surface read as a physical sheet rather than a tint. */
 .app {
+  position: relative;
   display: flex;
   flex-direction: column;
-  background: var(--surface);
-  border: 1px solid var(--seam);
+  /* Thinner than `--glass-bg` (0.72 in light) on purpose: at the app's chrome
+     opacity a white panel on a near-white ground is just white, and the frost
+     has nothing to show. Derived from `--surface` so it tracks the theme.
+     The blur is 12px, not the chrome's 24px — 24px erases a 22px grid into a
+     flat wash, which is exactly the flat look this was meant to fix. */
+  background: color-mix(in srgb, var(--surface) 58%, transparent);
+  -webkit-backdrop-filter: saturate(170%) blur(12px);
+  backdrop-filter: saturate(170%) blur(12px);
+  border: 1px solid var(--glass-border);
   border-radius: var(--r-lg);
-  box-shadow: var(--e2);
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.5);
   overflow: hidden;
+}
+/* Guarded the same way @abh/ui guards its dark block, so an explicitly chosen
+   light theme on a dark system doesn't inherit the dark bevel. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .app {
+    box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+}
+:root[data-theme="dark"] .app {
+  box-shadow: var(--glass-shadow), inset 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 /* ---- Header ---------------------------------------------------------- */
+/* Header and footer are tinted bands rather than opaque bars: a faint pull of
+   the foreground over the glass, so the drawn ground still shows through. */
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 12px 14px;
+  background: color-mix(in srgb, var(--fg) 3%, transparent);
   border-bottom: 1px solid var(--hairline);
 }
 .brand {
@@ -133,17 +204,26 @@ body {
 
 /* ---- Items ----------------------------------------------------------- */
 /* One surface holding rows separated by seams — not a stack of individually
-   outlined boxes, which is what made 380px of popup feel like a form. */
+   outlined boxes, which is what made 380px of popup feel like a form.
+   Tinted with the foreground rather than filled with `--surface`: an opaque
+   card on frosted glass punches a hole in it, and a *lighter* translucent one
+   is invisible in light mode where the glass is already near-white. A pull of
+   `--fg` separates the plane in both themes automatically — recessed in light,
+   raised in dark — and stays see-through either way. */
 .items {
-  background: var(--surface);
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
   border: 1px solid var(--seam);
   border-radius: var(--r-md);
   overflow: hidden;
 }
 .card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
   padding: 10px 12px;
   transition: background 140ms ease;
 }
+.card-main { flex: 1; min-width: 0; }
 .card + .card { border-top: 1px solid var(--seam); }
 .card:hover { background: color-mix(in srgb, var(--fg) 4%, transparent); }
 .card-title {
@@ -157,8 +237,12 @@ body {
   line-height: 1.45;
   color: var(--fg-muted);
 }
-/* AI keeps its own tint — violet is semantic here, not decoration. */
-.suggestion { background: color-mix(in srgb, var(--ai) 6%, transparent); }
+/* AI keeps its own tint — violet is semantic here, not decoration. A suggestion
+   stacks its two answers underneath, so it opts out of the row's flex layout. */
+.suggestion {
+  display: block;
+  background: color-mix(in srgb, var(--ai) 6%, transparent);
+}
 .suggestion:hover { background: color-mix(in srgb, var(--ai) 10%, transparent); }
 
 .row {
@@ -166,14 +250,6 @@ body {
   gap: 7px;
   margin-top: 9px;
 }
-
-/* Actions appear on hover — the same quiet affordance the app uses. */
-.done {
-  opacity: 0;
-  transition: opacity 130ms ease;
-}
-.card:hover .done,
-.done:focus-visible { opacity: 1; }
 
 button {
   cursor: pointer;
@@ -187,20 +263,40 @@ button {
 }
 button:active { transform: scale(0.98); }
 
-.accept, .done {
+.accept {
   background: color-mix(in srgb, var(--accent) 16%, transparent);
   color: var(--accent);
 }
-.accept:hover, .done:hover {
-  background: color-mix(in srgb, var(--accent) 26%, transparent);
-}
+.accept:hover { background: color-mix(in srgb, var(--accent) 26%, transparent); }
 .reject {
   background: transparent;
   color: var(--fg-muted);
   border: 1px solid var(--hairline);
 }
 .reject:hover { color: var(--fg); }
-.done { margin-top: 9px; }
+
+/* "Mark known" — a target, not a label. It warms to the accent when you're over
+   the row it belongs to, and commits to it under the cursor. */
+.done {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+  color: var(--fg-subtle);
+  transition: background 140ms ease, color 140ms ease, transform 100ms ease;
+}
+.card:hover .done {
+  background: color-mix(in srgb, var(--accent) 15%, transparent);
+  color: var(--accent);
+}
+.done:hover {
+  background: var(--accent);
+  color: var(--accent-contrast);
+}
 
 /* ---- Add row --------------------------------------------------------- */
 .add-row {
@@ -214,7 +310,9 @@ button:active { transform: scale(0.98); }
   padding: 8px 10px;
   border-radius: var(--r-sm);
   border: 1px solid var(--hairline);
-  background: var(--bg);
+  /* A well, not a card: the field is darker than the glass it sits in, which is
+     how a real input reads at a glance without needing a label. */
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
   color: var(--fg);
   font-size: 12.5px;
   font-family: inherit;
@@ -224,10 +322,10 @@ button:active { transform: scale(0.98); }
 .add-row input::placeholder { color: var(--fg-subtle); }
 .add-row input:focus { border-color: var(--accent); }
 .add {
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--fg) 8%, transparent);
   color: var(--fg);
 }
-.add:hover { filter: brightness(1.15); }
+.add:hover { background: color-mix(in srgb, var(--fg) 13%, transparent); }
 
 /* ---- Captures -------------------------------------------------------- */
 .capture-item {
@@ -241,7 +339,7 @@ button:active { transform: scale(0.98); }
   border-radius: var(--r-sm);
   transition: background 150ms ease;
 }
-.capture-item:hover { background: var(--surface-2); }
+.capture-item:hover { background: color-mix(in srgb, var(--fg) 5%, transparent); }
 .capture-kind {
   flex-shrink: 0;
   display: grid;
@@ -249,7 +347,7 @@ button:active { transform: scale(0.98); }
   width: 22px;
   height: 22px;
   border-radius: 8px;
-  background: var(--surface-2);
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
   color: var(--fg-muted);
 }
 .capture-title {
@@ -292,6 +390,7 @@ button:active { transform: scale(0.98); }
   justify-content: center;
   gap: 5px;
   padding: 9px;
+  background: color-mix(in srgb, var(--fg) 3%, transparent);
   border-top: 1px solid var(--hairline);
   font-size: 10.5px;
   color: var(--fg-subtle);
@@ -308,3 +407,20 @@ button:active { transform: scale(0.98); }
   cursor: pointer;
 }
 .link:hover { text-decoration: underline; }
+
+/* ---- Accessibility --------------------------------------------------- */
+/* @abh/ui covers `.glass`/`.float`/`.rail`/`.sheet`; `.app` is this surface's
+   own material, so it needs its own fallback. Reduced transparency is a real
+   accessibility need — go opaque and drop the ground rather than ship text
+   over a texture someone has asked not to see. */
+@media (prefers-reduced-transparency: reduce) {
+  .app {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .items { background: var(--surface); }
+  .abh-ambient::before,
+  .abh-ambient::after,
+  .abh-ambient > i { display: none; }
+}

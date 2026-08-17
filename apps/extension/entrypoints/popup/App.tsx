@@ -168,11 +168,20 @@ export function App() {
         ) : (
           <div className="items">{snap.available.slice(0, 3).map((t) => (
             <div key={t.id} className="card">
-              <div className="card-title">{t.title}</div>
-              {t.whyItMatters && <div className="card-sub">{t.whyItMatters}</div>}
-              <button className="done" onClick={() => complete(t.id)}>
-                <Check size={12} style={{ verticalAlign: "-2px", marginRight: 4 }} />
-                Mark known
+              <div className="card-main">
+                <div className="card-title">{t.title}</div>
+                {t.whyItMatters && <div className="card-sub">{t.whyItMatters}</div>}
+              </div>
+              {/* Always present rather than revealed on hover. A hover-only
+                  affordance costs a row its full height in reserved space, and
+                  three rows of dead air is most of a 372px popup. */}
+              <button
+                className="done"
+                onClick={() => complete(t.id)}
+                title="Mark known"
+                aria-label={`Mark ${t.title} known`}
+              >
+                <Check size={14} />
               </button>
             </div>
           ))}</div>
