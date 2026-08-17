@@ -14,6 +14,13 @@ export interface StoredAccount {
   key: string;
   /** When this device joined the account (created it, or was paired). */
   joinedAt: number;
+  /** Relay base URL, once this device has enrolled with one. */
+  endpoint?: string;
+  /**
+   * This device's bearer token for that relay. Grants the right to append to
+   * and read a log of ciphertext — never the ability to read it.
+   */
+  token?: string;
 }
 
 export interface AccountStore {

@@ -1,7 +1,7 @@
 import { DevicePairing, useAbh } from "@abh/ui";
 import { Cloud, CloudOff, Loader2, TriangleAlert, X } from "lucide-react";
 import { useEffect, type ReactElement } from "react";
-import { account, PAIRING_URL, useAccountSync } from "./sync";
+import { account, announcePairing, enrolWithRelay, PAIRING_URL, useAccountSync } from "./sync";
 
 /**
  * The account sheet — devices, pairing, and what sync is currently doing.
@@ -44,6 +44,15 @@ export function DeviceSheet({ onClose }: { onClose: () => void }): ReactElement 
         <DevicePairing
           account={account}
           pairingUrl={PAIRING_URL}
+          onOffer={async (code, expiresAt) => {
+            // Creating an account here is the first time this device needs the
+            // relay, so enrol before publishing the code.
+            await enrolWithRelay();
+            await announcePairing(code, expiresAt);
+          }}
+          onEnrol={async (code) => {
+            await enrolWithRelay(code);
+          }}
           onPaired={() => void useAccountSync()}
         />
 

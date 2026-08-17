@@ -147,6 +147,26 @@ export class AccountManager {
   }
 
   /**
+   * Record where this device is enrolled and with what token. Called after
+   * `enrolDevice`; kept here so one place owns everything that identifies this
+   * device to a relay.
+   */
+  async setEnrolment(endpoint: string, token: string): Promise<StoredAccount> {
+    const account = await this.current();
+    if (!account) throw new NotSignedInError();
+    const next = { ...account, endpoint, token };
+    await this.store.save(next);
+    this.cached = next;
+    return next;
+  }
+
+  /** Whether this device can actually reach a relay yet. */
+  async isEnrolled(): Promise<boolean> {
+    const a = await this.current();
+    return Boolean(a?.endpoint && a.token);
+  }
+
+  /**
    * Sign this device out. The map stays on the device and stays usable — this
    * only removes the ability to sync. Nothing is deleted, because "sign out"
    * should never be a data-loss button.

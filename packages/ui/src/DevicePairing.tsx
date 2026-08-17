@@ -39,6 +39,14 @@ export interface DevicePairingProps {
   pairingUrl?: string;
   /** Called after this device joins an account, so the app can start syncing. */
   onPaired?: (account: StoredAccount) => void;
+  /**
+   * Register a freshly-minted code with the relay, so the other device can
+   * redeem it. Omit for a local-only build: the QR alone carries everything
+   * that matters, and the relay only ever learns the code, never the key.
+   */
+  onOffer?: (code: string, expiresAt: number) => Promise<void>;
+  /** Enrol this device with the relay after joining. `code` proves the claim. */
+  onEnrol?: (code: string) => Promise<void>;
   className?: string;
 }
 
@@ -48,6 +56,8 @@ export function DevicePairing({
   account,
   pairingUrl,
   onPaired,
+  onOffer,
+  onEnrol,
   className,
 }: DevicePairingProps): ReactElement {
   const [signedIn, setSignedIn] = useState<StoredAccount | null>(null);
@@ -78,22 +88,29 @@ export function DevicePairing({
     setBusy(true);
     try {
       if (!(await account.isSignedIn())) await account.create();
+      const next = await account.offerPairing();
+      // Register the code before showing it — a code on screen that the other
+      // device can't redeem is worse than no code at all.
+      await onOffer?.(next.code, next.expiresAt);
       setSignedIn(await account.current());
-      setOffer(await account.offerPairing());
+      setOffer(next);
       setMode("showing");
     } catch (err) {
       setError(message(err));
     } finally {
       setBusy(false);
     }
-  }, [account]);
+  }, [account, onOffer]);
 
   const submitCode = useCallback(async () => {
     setError(null);
     setBusy(true);
     try {
-      const joined = await account.join(decodePairingOffer(typed.trim()));
-      setSignedIn(joined);
+      const scanned = decodePairingOffer(typed.trim());
+      const joined = await account.join(scanned);
+      // Joining is local; enrolling is what lets this device reach the relay.
+      await onEnrol?.(scanned.code);
+      setSignedIn(await account.current() ?? joined);
       setMode("idle");
       setTyped("");
       onPaired?.(joined);
@@ -102,7 +119,7 @@ export function DevicePairing({
     } finally {
       setBusy(false);
     }
-  }, [account, typed, onPaired]);
+  }, [account, typed, onPaired, onEnrol]);
 
   const payload = offer ? encodePairingOffer(offer, pairingUrl) : "";
   const expired = offer !== null && remaining === 0;

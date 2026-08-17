@@ -32,6 +32,7 @@ export {
 export * from "./account/index.js";
 export {
   EncryptedSyncAdapter,
+  HttpSyncTransport,
   LocalOnlySync,
   LocalStorageRelayLog,
   LocalStorageSyncState,
@@ -41,8 +42,11 @@ export {
   MemorySyncState,
   Outbox,
   SyncEngine,
+  SyncHttpError,
   TrackedStorage,
   compareVersions,
+  enrolDevice,
+  publishPairingCode,
   deltaToSnapshot,
   incomingWins,
   mergeRecords,
@@ -53,6 +57,7 @@ export {
   type Delta,
   type EncryptedSyncOptions,
   type GuardianLink,
+  type HttpTransportOptions,
   type InboundChange,
   type PersistedSyncState,
   type PushAck,
