@@ -134,11 +134,29 @@ class AbhDatabase {
           PRIMARY KEY (collection, id)
         );
 
-        -- Sync bookkeeping: the cursor, and the ids waiting to go out.
+        -- Sync bookkeeping: the cursor, and the changes waiting to go out.
         CREATE TABLE IF NOT EXISTS sync_state (
           key   TEXT PRIMARY KEY,
           value TEXT NOT NULL
         );
+
+        -- The outbox. A table, not a memory queue, because the whole point is
+        -- surviving the app being killed — which on a phone happens constantly
+        -- and without warning. A capture saved on the underground has to still
+        -- be queued tomorrow morning.
+        --
+        -- Rows hold a *reference* (collection + id), not a copy of the record.
+        -- Eleven edits to one topic therefore collapse to one queued entry, and
+        -- a retry ships whatever the record says *now* rather than what it said
+        -- when the write happened.
+        CREATE TABLE IF NOT EXISTS outbox (
+          collection TEXT NOT NULL,
+          id         TEXT NOT NULL,
+          queued_at  INTEGER NOT NULL,
+          PRIMARY KEY (collection, id)
+        );
+
+        CREATE INDEX IF NOT EXISTS outbox_order ON outbox (queued_at);
       ''');
     }
 

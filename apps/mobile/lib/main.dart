@@ -11,40 +11,60 @@
 /// holding which space is on screen.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import 'data/database.dart';
 import 'data/device_id.dart';
 import 'data/map_repository.dart';
 import 'design/dock.dart';
+import 'design/layout.dart';
 import 'design/survey.dart';
 import 'design/tokens.dart';
 import 'domain/models.dart';
 import 'onboarding/onboarding.dart';
 import 'prefs/preferences.dart';
 import 'settings/settings_sheet.dart';
+import 'search/omni.dart';
 import 'spaces/brain_space.dart';
 import 'spaces/capture_space.dart';
 import 'spaces/people_space.dart';
 import 'spaces/roadmap_space.dart';
 import 'state/map_controller.dart';
+import 'sync/sync_controller.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final db = await AbhDatabase.open();
   final deviceId = await loadDeviceId();
   final prefs = await PreferencesController.load();
+  final repository = MapRepository(db, deviceId: deviceId);
+
+  // Restored, not awaited. A device with a slow network must not sit on a
+  // blank screen while a sync completes — the local map is already on disk and
+  // is the thing the user came for.
+  final sync = SyncController(repository: repository, deviceId: deviceId);
+  unawaited(sync.restore());
+
   runApp(AbhApp(
-    controller: MapController(MapRepository(db, deviceId: deviceId)),
+    controller: MapController(repository),
     prefs: prefs,
+    sync: sync,
   ));
 }
 
 class AbhApp extends StatelessWidget {
-  const AbhApp({super.key, required this.controller, required this.prefs});
+  const AbhApp({
+    super.key,
+    required this.controller,
+    required this.prefs,
+    required this.sync,
+  });
 
   final MapController controller;
   final PreferencesController prefs;
+  final SyncController sync;
 
   @override
   Widget build(BuildContext context) {
@@ -54,16 +74,17 @@ class AbhApp extends StatelessWidget {
       controller: prefs,
       child: ListenableBuilder(
         listenable: prefs,
-        builder: (context, _) => _Themed(controller: controller),
+        builder: (context, _) => _Themed(controller: controller, sync: sync),
       ),
     );
   }
 }
 
 class _Themed extends StatelessWidget {
-  const _Themed({required this.controller});
+  const _Themed({required this.controller, required this.sync});
 
   final MapController controller;
+  final SyncController sync;
 
   @override
   Widget build(BuildContext context) {
@@ -108,7 +129,10 @@ class _Themed extends StatelessWidget {
         // Directionality widget found". Harmless if it turns out redundant.
         builder: (context, _) => Directionality(
           textDirection: TextDirection.ltr,
-          child: MapScope(controller: controller, child: const _Root()),
+          child: MapScope(
+            controller: controller,
+            child: SyncScope(controller: sync, child: const _Root()),
+          ),
         ),
       ),
     );
@@ -218,7 +242,10 @@ class _ShellState extends State<_Shell> {
               top: atTop ? clearance : safe.top + 20,
               bottom: atTop ? safe.bottom + 20 : clearance,
             ),
-            child: _spaceFor(_current),
+            // DocColumn caps the line length. Without it a 1024pt iPad renders
+            // body text at ~150 characters per line, which is roughly double
+            // what anyone can read without losing their place.
+            child: DocColumn(child: _spaceFor(_current)),
           ),
         ),
 
@@ -231,6 +258,19 @@ class _ShellState extends State<_Shell> {
             active: _current,
             onSelect: (s) => setState(() => _space = s),
             onLongPress: () => setState(() => _settingsOpen = true),
+          ),
+        ),
+
+        // Opposite the dock, so a thumb never has to choose between them.
+        Positioned(
+          right: Radii.floatInset,
+          top: atTop ? null : safe.top + Radii.floatInset,
+          bottom: atTop ? safe.bottom + Radii.floatInset : clearance,
+          child: Align(
+            alignment: atTop ? Alignment.bottomRight : Alignment.topRight,
+            child: OmniSearch(
+              onOpenTopic: (topic) => setState(() => _space = Space.brain),
+            ),
           ),
         ),
 

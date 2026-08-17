@@ -19,6 +19,8 @@ import 'package:uuid/uuid.dart';
 
 import '../domain/graph.dart';
 import '../domain/models.dart';
+import '../domain/merge.dart';
+import '../sync/entry.dart';
 import 'database.dart';
 
 class MapRepository {
@@ -120,13 +122,7 @@ class MapRepository {
       updatedAt: _now,
       deviceId: deviceId,
     );
-    _c.execute(
-      'INSERT OR REPLACE INTO edges '
-      '(id, from_id, to_id, strength, origin, created_at, updated_at, rev, device_id) '
-      'VALUES (?,?,?,?,?,?,?,?,?)',
-      [e.id, e.from, e.to, e.strength.name, originToWire(e.origin), e.createdAt,
-        e.updatedAt, e.rev, e.deviceId],
-    );
+    _putEdge(e);
     return e;
   }
 
@@ -209,6 +205,14 @@ class MapRepository {
         'VALUES (?,?,?,?,?)',
         [collection, id, rev + 1, _now, deviceId],
       );
+      // The tombstone is what travels; without this the delete is local
+      // forever and the record returns the next time a peer syncs.
+      _c.execute(
+        'INSERT OR REPLACE INTO outbox (collection, id, queued_at) VALUES (?,?,?)',
+        ['tombstones', id, _now],
+      );
+      _c.execute('DELETE FROM outbox WHERE collection = ? AND id = ?',
+          [collection, id]);
       _c.execute('COMMIT');
     } catch (_) {
       _c.execute('ROLLBACK');
@@ -223,7 +227,8 @@ class MapRepository {
 
   // ---- writes --------------------------------------------------------------
 
-  void _putTopic(Topic t) => _c.execute(
+  void _putTopic(Topic t, {bool enqueue = true}) {
+    _c.execute(
         'INSERT OR REPLACE INTO topics '
         '(id, title, summary, why_matters, unlocks, progress, origin, tags, '
         ' completed_at, created_at, updated_at, rev, device_id) '
@@ -232,18 +237,163 @@ class MapRepository {
           t.id, t.title, t.summary, t.whyItMatters, t.unlocks,
           progressToWire(t.progress), originToWire(t.origin), jsonEncode(t.tags),
           t.completedAt, t.createdAt, t.updatedAt, t.rev, t.deviceId,
-        ],
-      );
+      ],
+    );
+    if (enqueue) _enqueue('topics', t.id);
+  }
 
-  void _putCapture(Capture c) => _c.execute(
+  void _putCapture(Capture c, {bool enqueue = true}) {
+    _c.execute(
         'INSERT OR REPLACE INTO captures '
         '(id, kind, title, url, text, linked_ids, created_at, updated_at, rev, device_id) '
         'VALUES (?,?,?,?,?,?,?,?,?,?)',
         [
           c.id, c.kind, c.title, c.url, c.text, jsonEncode(c.linkedTopicIds),
           c.createdAt, c.updatedAt, c.rev, c.deviceId,
-        ],
+      ],
+    );
+    if (enqueue) _enqueue('captures', c.id);
+  }
+
+  void _putEdge(Edge e, {bool enqueue = true}) {
+    _c.execute(
+      'INSERT OR REPLACE INTO edges '
+      '(id, from_id, to_id, strength, origin, created_at, updated_at, rev, device_id) '
+      'VALUES (?,?,?,?,?,?,?,?,?)',
+      [e.id, e.from, e.to, e.strength.name, originToWire(e.origin), e.createdAt,
+        e.updatedAt, e.rev, e.deviceId],
+    );
+    if (enqueue) _enqueue('edges', e.id);
+  }
+
+  // ---- sync surface --------------------------------------------------------
+
+  /// Queue a record for the relay.
+  ///
+  /// Called from every write, without exception. A mutation that forgets this
+  /// is a change that exists on one device forever, and the failure is silent —
+  /// the app works perfectly right up until you pick up your other phone.
+  ///
+  /// `INSERT OR REPLACE` on (collection, id) is what collapses eleven edits to
+  /// one topic into a single queued entry.
+  void _enqueue(String collection, String id) => _c.execute(
+        'INSERT OR REPLACE INTO outbox (collection, id, queued_at) VALUES (?,?,?)',
+        [collection, id, _now],
       );
+
+  /// What's waiting to go out, oldest first, resolved to current records.
+  ///
+  /// Resolving at send time rather than at queue time is the point of storing
+  /// references: a topic edited five times since it was queued ships once, with
+  /// its latest content.
+  List<SyncEntry> outbox({int limit = 200}) {
+    final rows = _c.select(
+      'SELECT collection, id FROM outbox ORDER BY queued_at LIMIT ?',
+      [limit],
+    );
+
+    final out = <SyncEntry>[];
+    for (final r in rows) {
+      final collection = r['collection'] as String;
+      final id = r['id'] as String;
+      final record = switch (collection) {
+        'topics' => topicById(id)?.toJson(),
+        'edges' => edgeById(id)?.toJson(),
+        'captures' => captureById(id)?.toJson(),
+        'tombstones' => _tombstoneById(id),
+        _ => null,
+      };
+      // A queued record that no longer exists was deleted after being queued.
+      // The tombstone is queued separately, so dropping this entry is correct.
+      if (record != null) {
+        out.add(SyncEntry(collection: collection, record: record));
+      }
+    }
+    return out;
+  }
+
+  int pendingCount() =>
+      _c.select('SELECT COUNT(*) AS n FROM outbox').first['n'] as int;
+
+  /// Clears the entries that were just sent — by age, matching what `outbox`
+  /// returned. Anything queued *during* the request stays, which is why this
+  /// takes a count rather than truncating the table.
+  void clearOutbox(int count) => _c.execute(
+        'DELETE FROM outbox WHERE rowid IN '
+        '(SELECT rowid FROM outbox ORDER BY queued_at LIMIT ?)',
+        [count],
+      );
+
+  String cursor() {
+    final rows =
+        _c.select("SELECT value FROM sync_state WHERE key = 'cursor'");
+    return rows.isEmpty ? '0' : rows.first['value'] as String;
+  }
+
+  void setCursor(String value) => _c.execute(
+        "INSERT OR REPLACE INTO sync_state (key, value) VALUES ('cursor', ?)",
+        [value],
+      );
+
+  Topic? topicById(String id) {
+    final rows = _c.select('SELECT * FROM topics WHERE id = ?', [id]);
+    return rows.isEmpty ? null : _topic(rows.first);
+  }
+
+  Edge? edgeById(String id) {
+    final rows = _c.select('SELECT * FROM edges WHERE id = ?', [id]);
+    return rows.isEmpty ? null : _edge(rows.first);
+  }
+
+  Capture? captureById(String id) {
+    final rows = _c.select('SELECT * FROM captures WHERE id = ?', [id]);
+    return rows.isEmpty ? null : _capture(rows.first);
+  }
+
+  Map<String, dynamic>? _tombstoneById(String id) {
+    final rows = _c.select('SELECT * FROM tombstones WHERE id = ?', [id]);
+    if (rows.isEmpty) return null;
+    final r = rows.first;
+    return {
+      'id': r['id'],
+      'collection': r['collection'],
+      'rev': r['rev'],
+      'deletedAt': r['deleted_at'],
+      'deviceId': r['device_id'],
+    };
+  }
+
+  /// Writes from a peer. Deliberately do **not** enqueue: echoing an incoming
+  /// record straight back into the outbox is an infinite sync loop between two
+  /// devices, each politely returning what the other just sent.
+  void putTopic(Topic t) => _putTopic(t, enqueue: false);
+  void putEdge(Edge e) => _putEdge(e, enqueue: false);
+  void putCapture(Capture c) => _putCapture(c, enqueue: false);
+
+  /// Apply an incoming delete, if it beats what we hold.
+  void applyTombstone(Tombstone tomb) {
+    final existing = switch (tomb.collection) {
+      'topics' => topicById(tomb.id) as Versioned?,
+      'edges' => edgeById(tomb.id) as Versioned?,
+      'captures' => captureById(tomb.id) as Versioned?,
+      _ => null,
+    };
+    if (!tombstoneWins(existing, tomb)) return;
+
+    _c.execute('BEGIN');
+    try {
+      _c.execute('DELETE FROM ${tomb.collection} WHERE id = ?', [tomb.id]);
+      _c.execute(
+        'INSERT OR REPLACE INTO tombstones (collection, id, rev, deleted_at, device_id) '
+        'VALUES (?,?,?,?,?)',
+        [tomb.collection, tomb.id, tomb.rev, tomb.deletedAt, tomb.deviceId],
+      );
+      _c.execute('COMMIT');
+    } catch (_) {
+      _c.execute('ROLLBACK');
+      rethrow;
+    }
+  }
 
   // ---- row mapping ---------------------------------------------------------
 

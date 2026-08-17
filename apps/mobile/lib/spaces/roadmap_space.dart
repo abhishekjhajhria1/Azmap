@@ -12,6 +12,7 @@ library;
 import 'package:flutter/widgets.dart';
 
 import '../design/survey.dart';
+import '../design/layout.dart';
 import '../design/tokens.dart';
 import '../domain/graph.dart';
 import '../domain/models.dart';
@@ -279,15 +280,16 @@ class _PrimaryAction extends StatelessWidget {
     final c = AbhTheme.of(context);
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: ScaledBox(
         height: 50,
-        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: c.accent,
           borderRadius: BorderRadius.circular(Radii.pill),
         ),
         child: Text(
           label,
+          textAlign: TextAlign.center,
           style: AbhText.headline.copyWith(color: c.accentContrast),
         ),
       ),

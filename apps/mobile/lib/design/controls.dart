@@ -12,6 +12,7 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+import 'layout.dart';
 import 'tokens.dart';
 
 
@@ -38,13 +39,17 @@ class ChoiceRow extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: Container(
-          // Never compressed by the density preference — this is a tap target.
-          constraints: const BoxConstraints(minHeight: Metrics.tapTarget + 12),
+        child: ScaledBox(
+          // Never compressed by density — this is a tap target — and it grows
+          // with the system text size rather than clipping its own label.
+          height: Metrics.tapTarget + 12,
+          alignment: Alignment.centerLeft,
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          color: selected
-              ? c.accent.withValues(alpha: 0.09)
-              : const Color(0x00000000),
+          decoration: BoxDecoration(
+            color: selected
+                ? c.accent.withValues(alpha: 0.09)
+                : const Color(0x00000000),
+          ),
           child: Row(
             children: [
               Expanded(
@@ -149,7 +154,7 @@ class Segmented extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AbhTheme.of(context);
-    return Container(
+    return ScaledBox(
       height: Metrics.tapTarget,
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
@@ -207,7 +212,7 @@ class Toggle extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: () => onChanged(!value),
-        child: SizedBox(
+        child: ScaledBox(
           height: Metrics.tapTarget + 8,
           child: Row(
             children: [
@@ -263,14 +268,15 @@ class PrimaryButton extends StatelessWidget {
     final c = AbhTheme.of(context);
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: ScaledBox(
         height: 52,
-        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
         decoration: BoxDecoration(
           color: c.accent,
           borderRadius: BorderRadius.circular(Radii.pill),
         ),
         child: Text(label,
+            textAlign: TextAlign.center,
             style: AbhText.headline.copyWith(color: c.accentContrast)),
       ),
     );

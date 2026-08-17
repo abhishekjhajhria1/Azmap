@@ -21,6 +21,7 @@ import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 
+import '../design/layout.dart';
 import '../design/tokens.dart';
 import '../domain/graph.dart';
 import '../domain/models.dart';
@@ -350,15 +351,16 @@ class _Inspector extends StatelessWidget {
           else
             GestureDetector(
               onTap: onComplete,
-              child: Container(
+              child: ScaledBox(
                 height: 42,
-                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 decoration: BoxDecoration(
                   color: c.accent,
                   borderRadius: BorderRadius.circular(Radii.pill),
                 ),
                 child: Text(
                   unlocks > 0 ? 'Mark known — opens $unlocks' : 'Mark known',
+                  textAlign: TextAlign.center,
                   style: AbhText.headline.copyWith(color: c.accentContrast),
                 ),
               ),

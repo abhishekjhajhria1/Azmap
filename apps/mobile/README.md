@@ -23,9 +23,63 @@ at all, not a sign something is conceptually wrong.
 | `lib/spaces/` | Brain, Roadmap, Capture, People |
 | `test/` | Conformance corpus, `LocalMind`, preferences |
 
-**Not done yet:** sync (the schema carries the envelope for it, but nothing
-talks to the relay), the share-sheet capture target, the omni-search sheet, and
-the guide reader.
+**Not done yet:** the share-sheet capture target, pairing UI (the client is
+written; nothing shows a QR scanner yet), and the guide reader.
+
+## Adaptive layout — what was actually broken
+
+Three failures found by audit, all of which would have shipped:
+
+**Nothing read the system text size.** Every `height: 52` button clips its own
+label at 200% text — the third notch in iOS Accessibility, not an exotic
+setting — and clipping is silent in release builds. `ScaledBox` grows with the
+scale and keeps the 44dp floor. Scale is clamped at 2.0, as iOS's own apps do:
+past that a phone fits three words per line and no layout survives.
+
+**No max content width.** A `ListView` with 22dp padding on a 1024pt iPad
+produces ~150 characters per line. Comfortable reading is 45–75; past ~90 the
+eye loses its place returning to the next line. `DocColumn` caps it.
+
+**Vertical hinges were ignored entirely.** The dock avoided a horizontal hinge,
+but a book-style fold cuts a single column of text physically in half.
+`TwoPane` splits along the seam and renders the gap as the seam itself, so
+nothing is ever drawn underneath it. On compact widths the detail pane is
+*dropped*, not stacked — stacking buries secondary content under a screen of
+scrolling, which is worse than absent because it still costs a scroll to pass.
+
+## Sync
+
+`lib/sync/` talks to `apps/server`, which is an append-only log of sealed blobs
+it cannot read. AES-GCM-256, wire-identical to the TypeScript side — including
+the detail that breaks silently if you get it wrong: `cryptography` keeps the
+MAC separate while WebCrypto appends it to the ciphertext, so the Dart client
+concatenates before encoding. Miss that and decryption fails *on the other
+platform only*.
+
+Three failure modes handled: **offline** (a durable outbox table, not a memory
+queue — a capture saved on the underground is still queued tomorrow),
+**half-sent** (the cursor advances only after changes are applied; replay is
+safe because the merge is idempotent, losing a page is not), and **two syncs at
+once** (single-flight).
+
+The outbox holds *references*, not copies, so eleven edits to one topic collapse
+to one entry and a retry ships the current version. Incoming records are written
+with `enqueue: false` — echoing a peer's record back into your own outbox is an
+infinite sync loop between two devices politely returning what the other sent.
+
+Deployment: `apps/server/Dockerfile` and `fly.toml`. **The volume is not
+optional** — see that README for why losing the log is data loss rather than a
+fresh start.
+
+## Search
+
+A floating circle that becomes a search bar: one `AnimatedContainer` morphing
+width and radius, so there is one widget with continuous identity at every
+frame. Two widgets cross-fading reads as a glitch, which is what most
+implementations of this actually are. It searches topics and captures, ranked
+so a prefix match beats a mid-word one — search that returns the right answer
+sixth feels broken while technically working. When there is an AI to ask, the
+field is already the right shape for a question.
 
 ## Adaptive by preference, not by profiling
 

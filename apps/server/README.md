@@ -73,3 +73,44 @@ env var.
   something shared; behind a proxy, make sure `X-Forwarded-For` is trustworthy.
 - **Back up the SQLite file.** It's the only copy of anyone's ciphertext that
   isn't on their devices.
+
+## Hosting it
+
+```sh
+docker build -f apps/server/Dockerfile -t abh-relay .   # from the repo root
+docker run -p 8080:8080 -v abh_data:/data abh-relay
+```
+
+Or `fly deploy` with the included `fly.toml` (Mumbai region, one machine, one
+volume).
+
+**The volume is not optional.** The relay's entire state is one SQLite file at
+`$ABH_DB`. Without a persistent mount it survives exactly as long as the
+container: every device then finds the log empty, re-uploads its whole map, and
+— because the merge is last-writer-wins by `rev` — the oldest device's stale
+copies can win against newer edits. Losing the log is not "sync starts fresh",
+it is data loss with no error message.
+
+**One machine, not zero and not many.** SQLite on a local volume means a second
+instance has a *different* log. Devices would sync to whichever they reached,
+diverge silently, and neither would report a problem. Scale this by moving to
+Postgres, never by adding replicas.
+
+### Environment
+
+| | |
+|---|---|
+| `PORT` | Listen port (default 8787; the container sets 8080) |
+| `ABH_DB` | Path to the SQLite file. **Point this at a mounted volume.** |
+| `ABH_ORIGINS` | Comma-separated CORS allowlist. Empty means same-origin only. |
+
+### What it can and cannot see
+
+It stores `{ v, iv, ct }` blobs and a device token hash. It cannot read a
+topic's title, cannot merge anything, and has no idea what a map is — every
+decision that matters happens on the devices. That is enforced by the shape of
+the code, not by a policy: there is no key on the server to decrypt with, and
+the account key rides in a URL *fragment*, which browsers never transmit.
+
+Which also means: **a lost account key is unrecoverable.** No password reset
+exists or can exist. Pairing a new device requires an already-paired one.

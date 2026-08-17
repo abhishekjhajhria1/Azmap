@@ -18,6 +18,8 @@ import '../design/tokens.dart';
 import '../domain/models.dart';
 import '../prefs/preferences.dart';
 import '../state/map_controller.dart';
+import '../sync/sync_client.dart';
+import '../sync/sync_controller.dart';
 
 class PeopleSpace extends StatelessWidget {
   const PeopleSpace({super.key, required this.onOpenSettings});
@@ -65,7 +67,10 @@ class PeopleSpace extends StatelessWidget {
           style: AbhText.body.copyWith(color: c.fgMuted),
         ),
 
-        const SizedBox(height: 28),
+        const SizedBox(height: 24),
+        _SyncRow(onOpenSettings: onOpenSettings),
+
+        const SizedBox(height: 24),
         Row(
           children: [
             Text('WHAT THEY WOULD SEE',
@@ -109,6 +114,53 @@ class PeopleSpace extends StatelessWidget {
             ],
           ),
       ],
+    );
+  }
+}
+
+
+/// Where this map lives, said plainly.
+///
+/// "Saved on this device" and "synced to your other devices" are different
+/// promises, and a person is entitled to know which one they currently have —
+/// especially the one who just typed a page of notes on a train.
+class _SyncRow extends StatelessWidget {
+  const _SyncRow({required this.onOpenSettings});
+
+  final VoidCallback onOpenSettings;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AbhTheme.of(context);
+    final sync = SyncScope.of(context);
+    final status = sync.status;
+
+    final (text, tint) = switch ((sync.connected, status.phase)) {
+      (false, _) => ('Private — saved on this device', c.fgMuted),
+      (true, SyncPhase.syncing) => ('Syncing…', c.fgMuted),
+      (true, SyncPhase.offline) => (
+          'Offline — ${status.pending} change${status.pending == 1 ? '' : 's'} queued',
+          c.fgMuted
+        ),
+      (true, SyncPhase.error) => (status.message ?? 'Sync failed', c.danger),
+      (true, _) => status.pending > 0
+          ? ('${status.pending} change${status.pending == 1 ? '' : 's'} to send', c.fgMuted)
+          : ('Encrypted — synced to your other devices', c.known),
+    };
+
+    return GestureDetector(
+      onTap: onOpenSettings,
+      child: Container(
+        height: Metrics.tapTarget,
+        alignment: Alignment.centerLeft,
+        child: Row(
+          children: [
+            Expanded(child: Text(text, style: AbhText.foot.copyWith(color: tint))),
+            Text(sync.connected ? 'Manage' : 'Pair a device',
+                style: AbhText.foot.copyWith(color: c.accent)),
+          ],
+        ),
+      ),
     );
   }
 }
