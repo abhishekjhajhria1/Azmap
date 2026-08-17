@@ -19,6 +19,7 @@ export function GuardianSpace() {
       id: `${def.id}__${s.id}`, title: s.title, summary: "", whyItMatters: s.why, unlocks: "",
       progress: (known.has(s.id) ? "known" : (s.progress ?? "not_started")) as Progress,
       origin: "curated", sources: [], tags: [s.domain], createdAt: 0, updatedAt: 0, rev: 0,
+      deviceId: "", // preview data — never written, never synced
     }));
     const learned = ns.filter((t) => t.progress === "known");
     return { topics: ns, learned, percent: engine.progressPercent(ns) };

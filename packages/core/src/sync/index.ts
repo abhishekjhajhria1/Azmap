@@ -1,40 +1,82 @@
 /**
- * Sync + guardian sharing — the seams, not the backend.
+ * Sync — the engine, the wire contract, and the guardian seam.
  *
- * The product is on-device first. Guardian visibility and cross-device sync are
- * a funded, later phase, but the shape is defined now so nothing has to be
- * rewritten when it lands. The foundation already exists on the storage layer:
- * every record carries a monotonic `rev`, and `StorageAdapter.exportSnapshot` /
- * `importSnapshot("merge")` implement last-writer-by-`rev` merge — that IS the
- * sync contract. A real adapter moves deltas over the wire; the merge rule
- * stays identical.
+ * The product is on-device first: nothing here runs unless an adapter is
+ * configured, and `LocalOnlySync` (the default) never touches a network. What
+ * this module guarantees is that turning sync *on* is a configuration change,
+ * not a rewrite — the merge rule, the outbox and the record envelope are the
+ * same whether or not a remote exists.
+ *
+ * Wiring it up:
+ *
+ * ```ts
+ * const raw = new IndexedDbStorage();
+ * const outbox = new Outbox(state);
+ * const store = new MapStore(new TrackedStorage(raw, outbox)); // app writes here
+ * const engine = new SyncEngine({ storage: raw, outbox, adapter });
+ * await engine.start();
+ * ```
+ *
+ * The app writes through `TrackedStorage` so every mutation is queued; the
+ * engine holds the raw adapter so inbound records don't echo back out.
  */
 
-import type { MapSnapshot } from "../types.js";
+export { SyncEngine } from "./engine.js";
+export type {
+  InboundChange,
+  Scheduler,
+  SyncEngineOptions,
+  SyncResult,
+} from "./engine.js";
+export { Outbox, TrackedStorage } from "./outbox.js";
+export {
+  LocalStorageRelayLog,
+  LoopbackSyncAdapter,
+  MemoryRelayLog,
+} from "./loopback.js";
+export type {
+  LocalStorageRelayOptions,
+  LoopbackOptions,
+  RelayEntry,
+  RelayLog,
+} from "./loopback.js";
+export {
+  compareVersions,
+  incomingWins,
+  mergeRecords,
+  mergeTombstones,
+  tombstoneKey,
+  tombstoneWins,
+} from "./merge.js";
+export type { Versioned } from "./merge.js";
+export { deltaToSnapshot, MemorySyncState } from "./types.js";
+export type {
+  Cursor,
+  Delta,
+  PersistedSyncState,
+  PushAck,
+  PushDelta,
+  RecordSet,
+  SyncAdapter,
+  SyncSnapshotState,
+  SyncStateStore,
+  SyncStatus,
+} from "./types.js";
 
-/** A change set to move between devices. Keyed on `rev` for conflict handling. */
-export interface Delta {
-  since: number; // highest rev the peer already has
-  snapshot: MapSnapshot; // records newer than `since` (full snapshot is valid too)
-}
+import type { Cursor, PushAck, SyncAdapter } from "./types.js";
 
 /**
- * Moves deltas to/from a remote. `LocalOnlySync` is the shipped default — it
- * never touches a network, so the app is fully offline until a real backend
- * implements this same interface.
+ * The shipped default: a device with no remote configured.
+ *
+ * It is a real adapter, not a stub — the engine runs its full lifecycle against
+ * it, reports `offline`, and keeps the outbox intact. Point the app at a real
+ * adapter later and every queued write since install is pushed.
  */
-export interface SyncAdapter {
-  /** Push local changes to the remote. No-op locally. */
-  push(delta: Delta): Promise<void>;
-  /** Pull remote changes to merge locally. Returns null when nothing/offline. */
-  pull(since: number): Promise<Delta | null>;
-  /** Whether a remote is configured at all. */
-  readonly connected: boolean;
-}
-
 export class LocalOnlySync implements SyncAdapter {
   readonly connected = false;
-  async push(): Promise<void> {}
+  async push(): Promise<PushAck> {
+    return { cursor: "" as Cursor };
+  }
   async pull(): Promise<null> {
     return null;
   }

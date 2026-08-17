@@ -82,7 +82,7 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
     for (const s of def.path) for (const need of s.needs ?? []) out.push({ from: roadmapNodeId(def.id, need), to: roadmapNodeId(def.id, s.id), strength: "hard" });
     return out;
   }, [def.id]);
-  const statuses = useMemo(() => engine.computeStatuses({ topics: inRoadmap, edges: edges.map((e, i) => ({ id: String(i), origin: "curated" as const, createdAt: 0, rev: 0, ...e })) }), [inRoadmap, edges]);
+  const statuses = useMemo(() => engine.computeStatuses({ topics: inRoadmap, edges: edges.map((e, i) => ({ id: String(i), origin: "curated" as const, createdAt: 0, updatedAt: 0, rev: 0, deviceId: "", ...e })) }), [inRoadmap, edges]);
   const known = inRoadmap.filter((t) => t.progress === "known").length;
   const percent = Math.round((known / Math.max(1, def.path.length)) * 100);
 
