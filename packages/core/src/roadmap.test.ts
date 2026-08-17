@@ -48,9 +48,15 @@ describe("startRoadmap (mind map is the superset)", () => {
   });
 
   it("computes roadmap progress from the seeded state", async () => {
-    await store.startRoadmap(frontend());
-    // html + css known out of 11 path topics ≈ 18%.
-    expect(await store.roadmapProgress("frontend")).toBe(18);
+    const def = frontend();
+    await store.startRoadmap(def);
+    // Derived from the def, not hardcoded: a percentage baked in here breaks
+    // every time someone edits the content, which is the opposite of what this
+    // test is for. It checks the *arithmetic*, and content is free to change.
+    const seededKnown = def.path.filter((s) => s.progress === "known").length;
+    const expected = Math.round((seededKnown / def.path.length) * 100);
+    expect(await store.roadmapProgress("frontend")).toBe(expected);
+    expect(seededKnown).toBeGreaterThan(0); // the fixture must actually seed some
   });
 });
 

@@ -23,6 +23,7 @@ export { MemoryStorage } from "./storage/memory.js";
 
 // Product feature modules (moved into core so every surface reuses them).
 export * from "./roadmaps/index.js";
+export * from "./guides/index.js";
 export {
   FrontierSuggestionProvider,
   type SuggestionProvider,
