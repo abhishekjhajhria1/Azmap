@@ -1,6 +1,6 @@
 import { useAbh } from "@abh/ui";
 import {
-  ArrowRight, Brain, Compass, Inbox, LayoutPanelTop, Moon, Search, Sparkles, Users,
+  ArrowRight, Brain, Compass, Inbox, LayoutPanelTop, Moon, Search, Smartphone, Sparkles, Users,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { type Explainer, searchExplainers } from "./lib/howThingsWork";
@@ -36,9 +36,10 @@ const GROUP_ORDER: Kind[] = ["create", "topic", "capture", "explainer", "command
 interface Props {
   onGoToSpace: (id: string) => void;
   onSelectTopic: (id: string) => void;
+  onOpenDevices: () => void;
 }
 
-export function OmniBar({ onGoToSpace, onSelectTopic }: Props) {
+export function OmniBar({ onGoToSpace, onSelectTopic, onOpenDevices }: Props) {
   const topics = useAbh((s) => s.topics);
   const captures = useAbh((s) => s.captures);
   const explore = useAbh((s) => s.explore);
@@ -112,6 +113,8 @@ export function OmniBar({ onGoToSpace, onSelectTopic }: Props) {
         icon: <LayoutPanelTop size={15} />,
         run: async () => { await updateProfile({ dockPosition: dockTarget(profile?.dockPosition) }); toast("Dock moved"); close(); },
       },
+      { id: "cmd:devices", title: "Pair a device", icon: <Smartphone size={15} />,
+        run: () => { onOpenDevices(); close(); } },
       { id: "cmd:theme", title: "Toggle light / dark", icon: <Moon size={15} />,
         run: () => { document.documentElement.setAttribute("data-theme",
           getComputedStyle(document.documentElement).getPropertyValue("--bg").trim() === "#0b0e10" ? "light" : "dark"); close(); } },
@@ -135,7 +138,7 @@ export function OmniBar({ onGoToSpace, onSelectTopic }: Props) {
       });
     }
     return out;
-  }, [q, topics, captures, profile, onGoToSpace, onSelectTopic, explore, updateProfile]);
+  }, [q, topics, captures, profile, onGoToSpace, onSelectTopic, onOpenDevices, explore, updateProfile]);
 
   const grouped = useMemo(() => {
     const m = new Map<Kind, Result[]>();

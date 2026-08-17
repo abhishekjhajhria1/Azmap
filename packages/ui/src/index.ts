@@ -11,4 +11,10 @@ export {
 } from "./FloatingDock.js";
 export { MasterDetail } from "./MasterDetail.js";
 export { default as GraphView, type GraphNode, type GraphLink } from "./GraphView.js";
+export { QrCode, type QrCodeProps } from "./QrCode.js";
+export {
+  DevicePairing,
+  readPairingFromLocation,
+  type DevicePairingProps,
+} from "./DevicePairing.js";
 export { useAbh } from "./store.js";

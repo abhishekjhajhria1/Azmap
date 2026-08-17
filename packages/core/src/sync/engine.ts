@@ -74,7 +74,7 @@ export class SyncEngine {
   readonly outbox: Outbox;
 
   private readonly storage: StorageAdapter;
-  private readonly adapter: SyncAdapter;
+  private adapter: SyncAdapter;
   private readonly intervalMs: number;
   private readonly baseMs: number;
   private readonly maxMs: number;
@@ -165,6 +165,31 @@ export class SyncEngine {
     this.detachNetwork = null;
     this.detachRemote?.();
     this.detachRemote = null;
+  }
+
+  /**
+   * Point the engine at a different remote — what happens the moment a device
+   * is paired and local-only sync becomes encrypted account sync.
+   *
+   * The cursor is dropped, because a cursor is a position in *this* remote's
+   * log and means nothing in another's. The outbox is deliberately kept: local
+   * writes made before pairing are exactly the ones the new remote has never
+   * seen, so they should be the first thing pushed to it.
+   */
+  setAdapter(adapter: SyncAdapter): void {
+    this.detachRemote?.();
+    this.detachRemote = null;
+    this.adapter = adapter;
+    this.outbox.setCursor(null);
+    this.attempt = 0;
+    this.error = null;
+    if (this.running) {
+      this.detachRemote =
+        adapter.subscribe?.(() => {
+          if (this.running) void this.sync();
+        }) ?? null;
+      void this.sync();
+    }
   }
 
   // ---- The sync round -----------------------------------------------------

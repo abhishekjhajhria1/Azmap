@@ -29,10 +29,13 @@ export {
   type SuggestionInput,
   type ProposedTopic,
 } from "./suggest/index.js";
+export * from "./account/index.js";
 export {
+  EncryptedSyncAdapter,
   LocalOnlySync,
   LocalStorageRelayLog,
   LocalStorageSyncState,
+  LoopbackSealedTransport,
   LoopbackSyncAdapter,
   MemoryRelayLog,
   MemorySyncState,
@@ -48,6 +51,7 @@ export {
   tombstoneWins,
   type Cursor,
   type Delta,
+  type EncryptedSyncOptions,
   type GuardianLink,
   type InboundChange,
   type PersistedSyncState,
@@ -55,6 +59,9 @@ export {
   type PushDelta,
   type RecordSet,
   type Scheduler,
+  type SealedEntry,
+  type SealedPage,
+  type SealedTransport,
   type SyncAdapter,
   type SyncEngineOptions,
   type SyncResult,

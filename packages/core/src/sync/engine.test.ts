@@ -229,7 +229,7 @@ describe("the outbox", () => {
     });
     const result = await engine.sync();
     expect(result.pushed).toBeGreaterThan(0);
-    expect(log.read(0, 10)[0]!.delta.records.topics).toHaveLength(1);
+    expect(log.read(0, 10)[0]!.item.records.topics).toHaveLength(1);
   });
 
   it("keeps writes that landed while a push was in flight", async () => {

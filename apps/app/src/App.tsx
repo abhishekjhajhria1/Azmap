@@ -1,6 +1,7 @@
 import { AdaptiveShell, type DockItem, type DockPosition, FloatingDock, ThemeToggle, useAbh } from "@abh/ui";
 import { Brain, Compass, Inbox, Users } from "lucide-react";
 import { type ReactElement, useState } from "react";
+import { DeviceSheet } from "./DeviceSheet";
 import { ProgressBadge } from "./ProgressBadge";
 import { OmniBar } from "./OmniBar";
 import { Onboarding } from "./Onboarding";
@@ -33,6 +34,7 @@ export function App() {
   // Set when the omni-bar jumps straight to a topic, so the Brain space can
   // open its inspector on arrival.
   const [focusTopicId, setFocusTopicId] = useState<string | null>(null);
+  const [devicesOpen, setDevicesOpen] = useState(false);
 
   if (!ready) {
     return <div className="grid h-[100dvh] place-items-center text-subtle">Loading your map…</div>;
@@ -60,9 +62,14 @@ export function App() {
         onSelect={(id) => setSpace(id as SpaceId)}
         position={dockPosition}
         brand={
-          <span className="grid h-7 w-7 place-items-center rounded-[9px] bg-accent text-[13px] font-bold text-accent-ink">
+          <button
+            onClick={() => setDevicesOpen(true)}
+            aria-label="Your devices and account"
+            title="Your devices"
+            className="pressable grid h-7 w-7 place-items-center rounded-[9px] bg-accent text-[13px] font-bold text-accent-ink"
+          >
             A
-          </span>
+          </button>
         }
         trailing={
           <>
@@ -75,7 +82,10 @@ export function App() {
       <OmniBar
         onGoToSpace={(id) => setSpace(id as SpaceId)}
         onSelectTopic={(id) => setFocusTopicId(id)}
+        onOpenDevices={() => setDevicesOpen(true)}
       />
+
+      {devicesOpen && <DeviceSheet onClose={() => setDevicesOpen(false)} />}
     </>
   );
 }

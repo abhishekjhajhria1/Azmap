@@ -34,6 +34,13 @@ export {
   LoopbackSyncAdapter,
   MemoryRelayLog,
 } from "./loopback.js";
+export { EncryptedSyncAdapter, LoopbackSealedTransport } from "./encrypted.js";
+export type {
+  EncryptedSyncOptions,
+  SealedEntry,
+  SealedPage,
+  SealedTransport,
+} from "./encrypted.js";
 export type {
   LocalStorageRelayOptions,
   LoopbackOptions,

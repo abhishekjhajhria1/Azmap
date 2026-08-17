@@ -18,34 +18,40 @@
 import type { Cursor, Delta, PushAck, PushDelta, RecordSet, SyncAdapter } from "./types.js";
 import type { Collection, Tombstone } from "../types.js";
 
-export interface RelayEntry {
+export interface RelayEntry<T = PushDelta> {
   seq: number;
-  delta: PushDelta;
+  item: T;
 }
 
-/** The shared log. A server implements the same two operations. */
-export interface RelayLog {
-  append(delta: PushDelta): number;
+/**
+ * The shared log. A server implements the same two operations.
+ *
+ * Generic in what it carries: plain deltas for the local loopback, sealed
+ * envelopes once encryption is on. The log never inspects the payload either
+ * way, which is precisely why the same code serves both.
+ */
+export interface RelayLog<T = PushDelta> {
+  append(item: T): number;
   /** Entries with `seq > since`, oldest first. */
-  read(since: number, limit: number): RelayEntry[];
+  read(since: number, limit: number): RelayEntry<T>[];
   /** Notified when another instance appends. Optional. */
   subscribe?(fn: () => void): () => void;
 }
 
 /** In-process log — what tests use. */
-export class MemoryRelayLog implements RelayLog {
-  private entries: RelayEntry[] = [];
+export class MemoryRelayLog<T = PushDelta> implements RelayLog<T> {
+  private entries: RelayEntry<T>[] = [];
   private seq = 0;
   private listeners = new Set<() => void>();
 
-  append(delta: PushDelta): number {
+  append(item: T): number {
     this.seq += 1;
-    this.entries.push({ seq: this.seq, delta });
+    this.entries.push({ seq: this.seq, item });
     for (const fn of [...this.listeners]) fn();
     return this.seq;
   }
 
-  read(since: number, limit: number): RelayEntry[] {
+  read(since: number, limit: number): RelayEntry<T>[] {
     return this.entries.filter((e) => e.seq > since).slice(0, limit);
   }
 
@@ -79,7 +85,7 @@ export interface LocalStorageRelayOptions {
  * `BroadcastChannel` so a write in one tab wakes the others immediately instead
  * of waiting for the next poll.
  */
-export class LocalStorageRelayLog implements RelayLog {
+export class LocalStorageRelayLog<T = PushDelta> implements RelayLog<T> {
   private readonly key: string;
   private readonly maxEntries: number;
   private readonly storage: StorageLike;
@@ -102,19 +108,19 @@ export class LocalStorageRelayLog implements RelayLog {
     }
   }
 
-  private readLog(): RelayEntry[] {
+  private readLog(): RelayEntry<T>[] {
     try {
       const raw = this.storage.getItem(this.key);
-      return raw ? (JSON.parse(raw) as RelayEntry[]) : [];
+      return raw ? (JSON.parse(raw) as RelayEntry<T>[]) : [];
     } catch {
       return [];
     }
   }
 
-  append(delta: PushDelta): number {
+  append(item: T): number {
     const entries = this.readLog();
     const seq = (entries[entries.length - 1]?.seq ?? 0) + 1;
-    entries.push({ seq, delta });
+    entries.push({ seq, item });
     this.storage.setItem(
       this.key,
       JSON.stringify(entries.slice(-this.maxEntries)),
@@ -123,7 +129,7 @@ export class LocalStorageRelayLog implements RelayLog {
     return seq;
   }
 
-  read(since: number, limit: number): RelayEntry[] {
+  read(since: number, limit: number): RelayEntry<T>[] {
     return this.readLog()
       .filter((e) => e.seq > since)
       .slice(0, limit);
@@ -176,15 +182,15 @@ export class LoopbackSyncAdapter implements SyncAdapter {
     let profile: Delta["profile"] = undefined;
 
     for (const entry of page) {
-      if (this.deviceId && entry.delta.deviceId === this.deviceId) continue;
-      for (const [c, values] of Object.entries(entry.delta.records)) {
+      if (this.deviceId && entry.item.deviceId === this.deviceId) continue;
+      for (const [c, values] of Object.entries(entry.item.records)) {
         if (!values) continue;
         const bucket = (records as Record<string, unknown[]>)[c] ?? [];
         bucket.push(...values);
         (records as Record<string, unknown[]>)[c] = bucket;
       }
-      deletions.push(...entry.delta.deletions);
-      if (entry.delta.profile !== undefined) profile = entry.delta.profile;
+      deletions.push(...entry.item.deletions);
+      if (entry.item.profile !== undefined) profile = entry.item.profile;
     }
 
     // The cursor advances over our own entries too, so we don't rescan them.
