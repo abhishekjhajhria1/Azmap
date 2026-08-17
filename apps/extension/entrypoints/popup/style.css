@@ -296,3 +296,15 @@ button:active { transform: scale(0.98); }
   font-size: 10.5px;
   color: var(--fg-subtle);
 }
+
+/* The one inline action in the footer: "pair this browser". */
+.link {
+  background: none;
+  border: none;
+  padding: 0 0 0 2px;
+  font: inherit;
+  font-weight: 600;
+  color: var(--accent);
+  cursor: pointer;
+}
+.link:hover { text-decoration: underline; }

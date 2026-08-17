@@ -1,6 +1,6 @@
 import { defineBackground } from "wxt/sandbox";
 import { browser } from "wxt/browser";
-import { getStore, seedIfEmpty } from "../lib/store";
+import { getStore, syncNow } from "../lib/store";
 
 /**
  * Background service worker: the capture entry points.
@@ -16,7 +16,7 @@ export default defineBackground(() => {
       title: "Save to ABH map",
       contexts: ["page", "selection"],
     });
-    await seedIfEmpty();
+    await Promise.resolve();
   });
 
   browser.contextMenus.onClicked.addListener(async (info, tab) => {
@@ -50,11 +50,15 @@ async function capture(input: {
     text: input.text,
   });
   await flashBadge();
+  // Push it out now. The capture is already safe on disk — this is what makes
+  // it appear on your phone rather than only in this browser.
+  await syncNow();
 }
 
 async function flashBadge() {
   try {
-    await browser.action.setBadgeBackgroundColor({ color: "#e9b949" });
+    // The accent, not the retired mustard this was still painted with.
+    await browser.action.setBadgeBackgroundColor({ color: "#0071e3" });
     await browser.action.setBadgeText({ text: "✓" });
     setTimeout(() => browser.action.setBadgeText({ text: "" }), 1500);
   } catch {

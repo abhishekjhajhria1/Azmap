@@ -4,7 +4,7 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
-import { getStore, seedIfEmpty } from "../../lib/store";
+import { account, getStore, isConnected, syncNow } from "../../lib/store";
 
 /**
  * The popup's job is capture — one tap, never steal focus — with just enough
@@ -36,10 +36,14 @@ export function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [newTopic, setNewTopic] = useState("");
   const [justSaved, setJustSaved] = useState(false);
+  const [connected, setConnected] = useState<boolean | null>(null);
 
   const refresh = useCallback(async () => {
     const store = getStore();
-    await seedIfEmpty();
+    // Opening the popup is one of the two moments this extension is reliably
+    // alive, so it's when we drain anything captured while it wasn't.
+    void syncNow();
+    setConnected(await isConnected());
     const [available, suggestions, g, profile, snapshot] = await Promise.all([
       store.availableNow(),
       store.pendingSuggestions(),
@@ -60,13 +64,24 @@ export function App() {
 
   useEffect(() => { void refresh(); }, [refresh]);
 
+  /**
+   * Pairing needs a QR and a keyboard; a 372px popup is the wrong place for it.
+   * Send people to the app, which already does it properly.
+   */
+  async function openApp() {
+    const url = (await account.current())?.endpoint ?? "https://abh.app";
+    await browser.tabs.create({ url });
+  }
+
   async function complete(id: string) {
     await getStore().complete(id);
     await refresh();
+    void syncNow();
   }
   async function accept(id: string) {
     await getStore().acceptSuggestion(id);
     await refresh();
+    void syncNow();
   }
   async function reject(id: string) {
     await getStore().rejectSuggestion(id);
@@ -144,7 +159,11 @@ export function App() {
         {snap.available.length === 0 ? (
           <div className="empty">
             <span className="empty-icon"><BookOpen size={18} /></span>
-            <span>Nothing unlocked yet — add something you want to learn.</span>
+            <span>
+              {connected === false
+                ? "Nothing here yet. Pair this browser with your map to see what's open to you."
+                : "Nothing unlocked yet — add something you want to learn."}
+            </span>
           </div>
         ) : (
           <div className="items">{snap.available.slice(0, 3).map((t) => (
@@ -185,7 +204,16 @@ export function App() {
       )}
 
       <footer className="footer">
-        <ShieldCheck size={11} /> Private — nothing leaves this device
+        {connected ? (
+          <>
+            <ShieldCheck size={11} /> Encrypted — synced to your other devices
+          </>
+        ) : (
+          <>
+            <ShieldCheck size={11} /> Private — saved on this device
+            <button className="link" onClick={() => void openApp()}>Pair</button>
+          </>
+        )}
       </footer>
     </div>
   );
