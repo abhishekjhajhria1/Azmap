@@ -34,8 +34,8 @@ export function Pillar({
   children: ReactNode;
 }) {
   return (
-    <div className="group relative rounded-[20px] bg-surface p-7 shadow-[var(--e1)] ring-1 ring-[var(--seam)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--e3)]">
-      <span className="font-mono text-[13px] font-semibold text-accent">{index}</span>
+    <div className="group/pillar relative rounded-[20px] bg-surface p-7 shadow-[var(--e2)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--e3)]">
+      <span className="font-mono text-[13px] font-semibold text-subtle transition-colors group-hover/pillar:text-accent">{index}</span>
       <h3 className="mt-3 text-[19px] font-semibold leading-snug tracking-[-0.014em] text-fg">{title}</h3>
       <p className="mt-3 text-[15px] leading-relaxed text-muted">{children}</p>
     </div>
@@ -44,7 +44,7 @@ export function Pillar({
 
 export function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <div className="rounded-[18px] bg-surface px-5 py-5 shadow-[var(--e1)] ring-1 ring-[var(--seam)]">
+    <div className="rounded-[18px] bg-surface px-5 py-5 shadow-[var(--e2)]">
       <div className="text-[28px] font-bold leading-none tracking-[-0.03em] text-fg sm:text-[34px]">{value}</div>
       <div className="mt-2.5 text-[13px] leading-snug text-muted">{label}</div>
     </div>
@@ -59,7 +59,7 @@ export function Audience({
   children: ReactNode;
 }) {
   return (
-    <div className="rounded-[20px] bg-surface p-7 shadow-[var(--e1)] ring-1 ring-[var(--seam)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--e2)]">
+    <div className="rounded-[20px] bg-surface p-7 shadow-[var(--e2)] transition duration-300 hover:-translate-y-1 hover:shadow-[var(--e3)]">
       <h3 className="text-[18px] font-semibold tracking-[-0.014em] text-fg">{title}</h3>
       <p className="mt-2.5 text-[15px] leading-relaxed text-muted">{children}</p>
     </div>

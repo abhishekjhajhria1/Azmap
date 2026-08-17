@@ -199,15 +199,28 @@ export default function GraphView({
     layoutRef.current?.stop();
     graph.clear();
 
+    // How connected a topic is IS its importance on this map — a prerequisite
+    // three other things depend on matters more than a leaf. Derived here from
+    // the links so no caller has to compute and pass it (none ever did, which
+    // is why every node used to render at exactly the same size).
+    const degree = new Map<string, number>();
+    for (const l of links) {
+      degree.set(l.source, (degree.get(l.source) ?? 0) + 1);
+      degree.set(l.target, (degree.get(l.target) ?? 0) + 1);
+    }
+
     const n = Math.max(1, nodes.length);
     nodes.forEach((node, i) => {
       const a = (i / n) * Math.PI * 2;
+      const weight = node.weight ?? degree.get(node.id) ?? 0;
       graph.addNode(node.id, {
         label: node.label,
         // Seed on a circle so FA2 expands outward pleasingly.
         x: Math.cos(a) * 10 + Math.random(),
         y: Math.sin(a) * 10 + Math.random(),
-        size: node.ghost ? 6 : 6 + Math.min(9, (node.weight ?? 0) * 1.4),
+        // Square-root so a hub with 12 edges reads as bigger without becoming
+        // a planet; the range stays tight enough to look composed.
+        size: node.ghost ? 5 : 5 + Math.min(7, Math.sqrt(weight) * 2.6),
         color: node.color, // painted below from tokens
         // Kept so a theme flip can recompute colours without a rebuild.
         dcolor: node.color,
@@ -219,7 +232,9 @@ export default function GraphView({
     for (const l of links) {
       if (!graph.hasNode(l.source) || !graph.hasNode(l.target)) continue;
       if (graph.hasEdge(l.source, l.target)) continue;
-      graph.addEdge(l.source, l.target, { soft: !!l.soft, size: 1 });
+      // Hairlines. Edges are the map's connective tissue, not its subject —
+      // at size 1 they read as cables and dominate the composition.
+      graph.addEdge(l.source, l.target, { soft: !!l.soft, size: l.soft ? 0.6 : 0.8 });
     }
     colorsRef.current = readThemeColors();
     paintGraph(graph, colorsRef.current);

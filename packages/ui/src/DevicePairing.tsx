@@ -117,7 +117,7 @@ export function DevicePairing({
       </header>
 
       {/* The honest disclosure, not a footnote. */}
-      <div className="group mb-6">
+      <div className="stack mb-6">
         <div className="row-btn items-start gap-3">
           <ShieldCheck size={18} className="mt-0.5 shrink-0 text-known" />
           <p className="text-sm text-muted">

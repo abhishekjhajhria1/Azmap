@@ -23,20 +23,22 @@ export function RoadmapSpace() {
 
 function Picker({ onPick }: { onPick: (def: RoadmapDef) => void }) {
   return (
-    <div className="mx-auto h-full max-w-[38rem] overflow-y-auto px-6 py-14">
-      <h1 className="t-display text-balance">What do you want to learn?</h1>
-      <p className="t-body mt-3 max-w-[30rem] text-muted">
+    <div className="h-full overflow-y-auto py-12">
+     <div className="doc">
+      <p className="t-eyebrow">Roadmaps</p>
+      <h1 className="t-title1 mt-2 text-balance">What do you want to learn?</h1>
+      <p className="t-body mt-2.5 max-w-[34rem] text-muted">
         Pick a path and follow it, distraction-free. It reveals as you go, and
         everything you finish lands in your brain.
       </p>
 
-      <div className="mt-9 group">
+      <div className="stack mt-7">
         {ROADMAPS.map((r) => (
           <button key={r.id} onClick={() => onPick(r)} className="row-btn group/row py-4">
-            <span
-              className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] text-[15px] font-bold"
-              style={{ background: `color-mix(in srgb, ${r.accent} 18%, transparent)`, color: r.accent }}
-            >
+            {/* Neutral tile. Each roadmap used to carry its own decorative
+                colour (a mustard, a salmon) — colour here competes with the one
+                accent that marks what to do next. */}
+            <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-surface-2 text-[15px] font-bold text-muted transition-colors group-hover/row:text-fg">
               {r.title[0]}
             </span>
             <span className="min-w-0 flex-1">
@@ -63,6 +65,7 @@ function Picker({ onPick }: { onPick: (def: RoadmapDef) => void }) {
           </p>
         </div>
       </div>
+     </div>
     </div>
   );
 }
@@ -93,8 +96,20 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
 
   const remaining = def.path.length - known;
 
+  // What the current step rests on, and what completing it opens — read
+  // straight off the roadmap's own prerequisite declarations.
+  const prereqs = useMemo(
+    () => (seed?.needs ?? []).flatMap((id) => def.path.filter((s) => s.id === id)),
+    [seed, def],
+  );
+  const opens = useMemo(
+    () => (seed ? def.path.filter((s) => (s.needs ?? []).includes(seed.id)) : []),
+    [seed, def],
+  );
+
   return (
-    <div className="mx-auto h-full max-w-[38rem] overflow-y-auto px-6 py-10">
+    <div className="h-full overflow-y-auto py-10">
+     <div className="mx-auto w-full max-w-[64rem] px-6">
       {/* Header — the roadmap is context, not the hero. Kept quiet. */}
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
@@ -122,14 +137,17 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
         </span>
       </div>
 
+      {/* Two columns where there's room: what to do next, and where you are.
+          One below the other on narrow screens. */}
+      <div className="mt-9 grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
       {/* THE focal point — one thing dominates this screen. */}
       {seed && nodeId && (
-        <section className="mt-10">
+        <section>
           <div className="t-eyebrow flex items-center gap-2 text-accent">
             <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS[status].dot }} />
             {status === "known" ? "Completed" : status === "locked" ? "Locked" : "Up next"}
           </div>
-          <h2 className="t-display mt-3 text-balance">{seed.title}</h2>
+          <h2 className="t-title1 mt-3 text-balance">{seed.title}</h2>
           <p className="t-body mt-4 max-w-[34rem] text-muted">{seed.why}</p>
 
           <div className="mt-7 flex items-center gap-3">
@@ -157,18 +175,61 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
               <span className="t-foot text-subtle">Clear its prerequisites first</span>
             )}
           </div>
+
+          {/* Why this step sits where it does. The map already knows what
+              this needs and what it opens — showing it turns a checklist into
+              an explanation, and gives the column something to say. */}
+          {(prereqs.length > 0 || opens.length > 0) && (
+            <div className="mt-10 grid gap-8 sm:grid-cols-2">
+              {prereqs.length > 0 && (
+                <div>
+                  <h3 className="t-eyebrow">Builds on</h3>
+                  <ul className="mt-2.5 space-y-1.5">
+                    {prereqs.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          onClick={() => setSelectedSeed(p.id)}
+                          className="t-tight text-muted transition-colors hover:text-fg"
+                        >
+                          {p.title}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {opens.length > 0 && (
+                <div>
+                  <h3 className="t-eyebrow">Opens up</h3>
+                  <ul className="mt-2.5 space-y-1.5">
+                    {opens.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          onClick={() => setSelectedSeed(p.id)}
+                          className="t-tight text-muted transition-colors hover:text-fg"
+                        >
+                          {p.title}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
         </section>
       )}
 
-      {/* The path — one grouped list, hairline seams, no boxed rows. */}
-      <section className="mt-12 pb-6">
+      {/* The path — one grouped list, hairline seams, no boxed rows. On wide
+          screens it sticks beside the focal block so you never lose your place. */}
+      <section className="pb-6 lg:sticky lg:top-2">
         <div className="mb-3 flex items-baseline justify-between px-1">
           <span className="t-eyebrow text-subtle">Your path</span>
           <span className="t-foot text-subtle">
             {remaining > 0 ? `${remaining} to go` : "Complete"}
           </span>
         </div>
-        <div className="group">
+        <div className="stack">
           {def.path.map((s, i) => {
             const st = statuses.get(roadmapNodeId(def.id, s.id)) ?? "locked";
             const active = s.id === seedId;
@@ -194,12 +255,14 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
                 <span className={`flex-1 truncate text-[14.5px] ${done ? "text-subtle" : "text-fg"} ${active ? "font-semibold" : "font-medium"}`}>
                   {s.title}
                 </span>
-                <span className="t-foot tabular-nums text-subtle">{i + 1}</span>
+                <span className="t-meta tabular-nums">{i + 1}</span>
               </button>
             );
           })}
         </div>
       </section>
+      </div>
+     </div>
     </div>
   );
 }

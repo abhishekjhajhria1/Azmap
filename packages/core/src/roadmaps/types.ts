@@ -28,7 +28,6 @@ export interface RoadmapDef {
   title: string;
   goal: string;
   blurb: string;
-  accent: string;
   /** The core prerequisite path you follow. */
   path: TopicSeed[];
   /** Side-quests the suggestion engine offers at the frontier. */

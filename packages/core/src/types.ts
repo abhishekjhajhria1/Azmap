@@ -200,6 +200,14 @@ export const Profile = z.object({
    * phones (thumb reach), top on larger screens.
    */
   dockPosition: z.enum(["auto", "top", "bottom"]).default("auto"),
+  /**
+   * Which navigation the app wears on screens big enough to choose. A rail
+   * gives a working document room to breathe and keeps context (active
+   * roadmap, recent captures) permanently in view; the dock keeps the canvas
+   * whole. Phones and folds always get the dock regardless — a rail on a
+   * 390px screen is just a wall.
+   */
+  navLayout: z.enum(["sidebar", "dock"]).default("sidebar"),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
   rev: z.number().int().nonnegative().default(0),

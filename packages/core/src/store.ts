@@ -346,6 +346,7 @@ export class MapStore {
       lastActiveDay: null,
       streakFreezes: 2,
       dockPosition: "auto",
+      navLayout: "sidebar",
       createdAt: ts,
       updatedAt: ts,
       rev: 0,

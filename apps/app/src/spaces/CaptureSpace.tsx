@@ -35,15 +35,17 @@ export function CaptureSpace() {
   }
 
   return (
-    <div className="mx-auto h-full max-w-[38rem] overflow-y-auto px-6 py-14">
-      <h1 className="t-display text-balance">Catch it before it&apos;s gone.</h1>
-      <p className="t-body mt-3 max-w-[30rem] text-muted">
+    <div className="h-full overflow-y-auto py-12">
+     <div className="doc">
+      <p className="t-eyebrow">Capture</p>
+      <h1 className="t-title1 mt-2 text-balance">Catch it before it&apos;s gone.</h1>
+      <p className="t-body mt-2.5 max-w-[34rem] text-muted">
         Paste a link or jot a note. It lands here instantly — connect it to your
         brain whenever you like.
       </p>
 
       {/* One field, one key. The primary action is unmistakable. */}
-      <div className="mt-8 flex items-center gap-2 rounded-full bg-surface px-2 py-2 shadow-[var(--e2)] ring-1 ring-[var(--seam)] transition focus-within:ring-2 focus-within:ring-accent">
+      <div className="mt-7 flex items-center gap-2 rounded-full bg-surface px-2 py-2 shadow-[var(--e2)] ring-1 ring-[var(--seam)] transition focus-within:ring-2 focus-within:ring-accent">
         <input
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -61,7 +63,7 @@ export function CaptureSpace() {
         </button>
       </div>
 
-      <div className="mt-10">
+      <div className="mt-9">
         <div className="mb-3 flex items-baseline justify-between px-1">
           <span className="t-eyebrow text-subtle">Inbox</span>
           {recent.length > 0 && <span className="t-foot text-subtle">{recent.length}</span>}
@@ -79,12 +81,12 @@ export function CaptureSpace() {
             </p>
           </div>
         ) : (
-          <div className="group">
+          <div className="stack">
             {recent.map((c) => {
               const Icon = c.kind === "note" ? StickyNote : Globe;
               const done = connected.has(c.id);
               return (
-                <div key={c.id} className="row-btn group/row cursor-default">
+                <div key={c.id} className="row-btn row-tight reveal-host cursor-default">
                   <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted">
                     <Icon size={15} />
                   </span>
@@ -100,7 +102,7 @@ export function CaptureSpace() {
                     onClick={() => void toBrain(c)}
                     disabled={done}
                     className={`pressable shrink-0 rounded-full px-3 py-1.5 text-[12px] font-semibold transition ${
-                      done ? "text-known" : "text-accent"
+                      done ? "text-known" : "reveal text-accent"
                     }`}
                     style={!done ? { background: "color-mix(in srgb, var(--accent) 14%, transparent)" } : undefined}
                   >
@@ -112,6 +114,7 @@ export function CaptureSpace() {
           </div>
         )}
       </div>
+     </div>
     </div>
   );
 }

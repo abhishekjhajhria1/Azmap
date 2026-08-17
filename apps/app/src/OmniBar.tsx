@@ -1,6 +1,6 @@
 import { useAbh } from "@abh/ui";
 import {
-  ArrowRight, Brain, Compass, Inbox, LayoutPanelTop, Moon, Search, Smartphone, Sparkles, Users,
+  ArrowRight, Brain, Compass, Inbox, LayoutPanelTop, Moon, PanelLeft, Search, Smartphone, Sparkles, Users,
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { type Explainer, searchExplainers } from "./lib/howThingsWork";
@@ -37,9 +37,11 @@ interface Props {
   onGoToSpace: (id: string) => void;
   onSelectTopic: (id: string) => void;
   onOpenDevices: () => void;
+  /** Left clearance when a rail is showing, so the bar never sits under it. */
+  inset?: number;
 }
 
-export function OmniBar({ onGoToSpace, onSelectTopic, onOpenDevices }: Props) {
+export function OmniBar({ onGoToSpace, onSelectTopic, onOpenDevices, inset = 0 }: Props) {
   const topics = useAbh((s) => s.topics);
   const captures = useAbh((s) => s.captures);
   const explore = useAbh((s) => s.explore);
@@ -113,6 +115,14 @@ export function OmniBar({ onGoToSpace, onSelectTopic, onOpenDevices }: Props) {
         icon: <LayoutPanelTop size={15} />,
         run: async () => { await updateProfile({ dockPosition: dockTarget(profile?.dockPosition) }); toast("Dock moved"); close(); },
       },
+      {
+        id: "cmd:nav", title: `Switch to ${profile?.navLayout === "dock" ? "sidebar" : "dock"}`,
+        icon: <PanelLeft size={15} />,
+        run: async () => {
+          await updateProfile({ navLayout: profile?.navLayout === "dock" ? "sidebar" : "dock" });
+          toast("Navigation switched"); close();
+        },
+      },
       { id: "cmd:devices", title: "Pair a device", icon: <Smartphone size={15} />,
         run: () => { onOpenDevices(); close(); } },
       { id: "cmd:theme", title: "Toggle light / dark", icon: <Moon size={15} />,
@@ -168,12 +178,22 @@ export function OmniBar({ onGoToSpace, onSelectTopic, onOpenDevices }: Props) {
       {/* The trigger floats, like everything else. */}
       <button
         onClick={() => setOpen(true)}
+        aria-label="Search or ask"
         className="float float--pill pressable fixed z-40 flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium text-muted"
-        style={{ right: "var(--float-inset)", bottom: "calc(var(--float-inset) + env(safe-area-inset-bottom, 0px) + 76px)" }}
+        style={{
+          right: "var(--float-inset)",
+          left: inset ? `${inset}px` : "var(--omni-left, auto)",
+          // Clear the dock on phones (it owns the bottom edge there); on wider
+          // screens the dock is at the top, so the bar can sit low.
+          bottom:
+            "calc(var(--float-inset) + env(safe-area-inset-bottom, 0px) + var(--omni-lift, 76px))",
+          justifyContent: inset ? "flex-start" : undefined,
+          maxWidth: inset ? 280 : undefined,
+        }}
       >
         <Search size={15} />
         Search or ask
-        <kbd className="ml-1 hidden rounded px-1.5 py-0.5 text-[10px] text-subtle ring-1 ring-[var(--glass-border)] sm:inline">⌘K</kbd>
+        <kbd className="ml-auto hidden rounded px-1.5 py-0.5 text-[10px] text-subtle ring-1 ring-[var(--glass-border)] sm:inline">⌘K</kbd>
       </button>
 
       {flash && (
@@ -184,7 +204,7 @@ export function OmniBar({ onGoToSpace, onSelectTopic, onOpenDevices }: Props) {
       )}
 
       {open && (
-        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/25 p-4 pt-[10vh] backdrop-blur-[2px]" onClick={close}>
+        <div className="sheet-veil fixed inset-0 z-50 flex items-start justify-center p-4 pt-[10vh]" onClick={close}>
           <div className="float w-full max-w-2xl overflow-hidden" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 px-5 py-4">
               <Search size={17} className="shrink-0 text-subtle" />

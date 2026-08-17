@@ -23,3 +23,27 @@ body {
     radial-gradient(var(--hairline) 1px, transparent 1px);
   background-size: 22px 22px;
 }
+
+/* Motion. Transform and opacity only, so a space change never costs layout —
+   these run over a live WebGL canvas.
+
+   `fadeIn` was referenced by the onboarding cards but never defined; the
+   animation silently did nothing. */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* The document moves between spaces; the chrome never does. */
+@keyframes spaceIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* How far the omni-bar sits above the bottom edge. On phones the dock owns
+   that edge, so the bar lifts clear of it. */
+:root { --omni-lift: 12px; }
+@media (max-width: 599px) {
+  /* Above the dock, spanning the width — a bar, not a blob over the content. */
+  :root { --omni-lift: 78px; --omni-left: var(--float-inset); }
+}

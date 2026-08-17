@@ -1,11 +1,16 @@
 /**
  * ABH design tokens — one semantic system, switched light/dark.
  *
- * A near-monochrome neutral base (no beige/cream — those read institutional)
- * with ONE vivid accent, iOS blue, spent sparingly. Green and violet are
- * semantic only: known/success and AI. Elevated surfaces use `.glass`/`.float`;
- * content stays clean. Tokens are consumed by Tailwind (via CSS-var colours),
- * by @abh/ui's inline styles, and by the graph (read at runtime).
+ * The direction: **a quiet document, floating on glass.** Content is a calm,
+ * dense, typographic document. Every piece of chrome — rail, dock, omnibar,
+ * canvas controls — is translucent material floating *above* it, never welded
+ * to a screen edge. Depth comes from light and blur; hierarchy from type and
+ * space; colour is near-monochrome with ONE blue accent, spent on the single
+ * most important thing on a screen and nowhere else.
+ *
+ * Green and violet are semantic only: known/success and AI. Tokens are consumed
+ * by Tailwind (via CSS-var colours), by @abh/ui's inline styles, and by the
+ * graph (read at runtime — see theme.ts).
  *
  * Theme resolution:
  *   :root                          → light
@@ -18,21 +23,29 @@
 
   /* True neutrals. No beige, no cream — those read as institutional. */
   --bg: #fbfbfd;
-  --ambient-1: rgba(10, 132, 255, 0.07);
-  --ambient-2: rgba(124, 92, 255, 0.06);
-  --ambient-3: rgba(10, 132, 255, 0.04);
+  --ambient-1: rgba(10, 132, 255, 0.09);
+  --ambient-2: rgba(124, 92, 255, 0.07);
+  --ambient-3: rgba(10, 132, 255, 0.05);
 
   --surface: #ffffff;
   --surface-2: #f1f2f4;
 
+  /* Chrome material: floats over content, blurs heavily. */
   --glass-bg: rgba(255, 255, 255, 0.72);
   --glass-border: rgba(0, 0, 0, 0.07);
   --glass-shadow: 0 10px 34px rgba(0, 0, 0, 0.08);
   --glass-blur: 24px;
 
+  /* Scrim material: sheets and overlays. Denser fill, lighter blur — it sits
+     ON the content rather than floating over it, so it needs to read as opaque
+     enough to host body text. */
+  --scrim-bg: rgba(255, 255, 255, 0.9);
+  --scrim-blur: 14px;
+  --scrim-veil: rgba(20, 20, 24, 0.22);
+
   --fg: #09090b;
-  --fg-muted: #62636a;
-  --fg-subtle: #9a9ba2;
+  --fg-muted: #5c5d64;
+  --fg-subtle: #8b8c94;
   --hairline: rgba(0, 0, 0, 0.08);
 
   /* One vivid accent, used sparingly — iOS blue, not mustard. */
@@ -41,6 +54,7 @@
   --known: #1a9f57;           /* semantic success only */
   --available: #0071e3;
   --ai: #7c5cff;              /* violet, reserved for AI */
+  --danger: #d70015;
   --ring: rgba(0, 113, 227, 0.4);
 
   --graph-label: #35363c;
@@ -60,18 +74,25 @@
 /* Radii — nothing in this product is sharp-cornered. */
 :root {
   --r-pill: 999px;
-  --r-lg: 26px;   /* floating panels, docks, sheets */
-  --r-md: 18px;   /* cards, grouped lists */
+  --r-lg: 26px;   /* floating panels, docks, rails, sheets */
+  --r-md: 18px;   /* cards, stacked lists */
   --r-sm: 12px;   /* small controls */
   /* How far floating chrome sits off the edge. Chrome never touches an edge. */
   --float-inset: 16px;
+  /* The rail's two widths. */
+  --rail-w: 264px;
+  --rail-w-collapsed: 68px;
 }
 
 /* Type scale — one ratio, dramatic jumps, optical tracking.
-   Small text never gets negative tracking; display text always does. */
+   Small text never gets negative tracking; display text always does.
+
+   `--t-hero` and `--t-display` belong to onboarding and the marketing site.
+   App screens top out at `.t-title1`: a working document doesn't shout. */
 :root {
   --t-caption: 11px;
   --t-footnote: 12.5px;
+  --t-tight: 14px;     /* dense rows, sidebars, metadata-heavy lists */
   --t-body: 15px;
   --t-headline: 17px;
   --t-title3: 20px;
@@ -85,29 +106,36 @@
   :root:not([data-theme="light"]) {
     color-scheme: dark;
 
-    --bg: #09090b;
-    --ambient-1: rgba(10, 132, 255, 0.10);
-    --ambient-2: rgba(124, 92, 255, 0.09);
-    --ambient-3: rgba(10, 132, 255, 0.05);
+    /* The planes are deliberately separated: a card at --surface must read as
+       a surface against --bg without needing an outline to prove it. */
+    --bg: #08080a;
+    --ambient-1: rgba(10, 132, 255, 0.18);
+    --ambient-2: rgba(124, 92, 255, 0.15);
+    --ambient-3: rgba(48, 209, 88, 0.07);
 
-    --surface: #141417;
-    --surface-2: #1e1e22;
+    --surface: #161619;
+    --surface-2: #212126;
 
-    --glass-bg: rgba(22, 22, 26, 0.68);
-    --glass-border: rgba(255, 255, 255, 0.08);
-    --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+    --glass-bg: rgba(28, 28, 33, 0.66);
+    --glass-border: rgba(255, 255, 255, 0.09);
+    --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
     --glass-blur: 24px;
 
+    --scrim-bg: rgba(22, 22, 26, 0.9);
+    --scrim-blur: 14px;
+    --scrim-veil: rgba(0, 0, 0, 0.5);
+
     --fg: #fafafa;
-    --fg-muted: #a1a1aa;
-    --fg-subtle: #6b6b73;
-    --hairline: rgba(255, 255, 255, 0.08);
+    --fg-muted: #a5a5ae;
+    --fg-subtle: #74747d;
+    --hairline: rgba(255, 255, 255, 0.09);
 
     --accent: #0a84ff;
     --accent-contrast: #ffffff;
     --known: #30d158;
     --available: #0a84ff;
     --ai: #a78bfa;
+    --danger: #ff453a;
     --ring: rgba(10, 132, 255, 0.5);
 
     --graph-label: #e6e6ea;
@@ -119,36 +147,41 @@
     --e1: 0 1px 2px rgba(0, 0, 0, 0.5);
     --e2: 0 6px 18px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
     --e3: 0 20px 50px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.45);
-    --seam: rgba(255, 255, 255, 0.06);
+    --seam: rgba(255, 255, 255, 0.07);
   }
 }
 
 :root[data-theme="dark"] {
   color-scheme: dark;
 
-  --bg: #09090b;
-  --ambient-1: rgba(10, 132, 255, 0.10);
-  --ambient-2: rgba(124, 92, 255, 0.09);
-  --ambient-3: rgba(10, 132, 255, 0.05);
+  --bg: #08080a;
+  --ambient-1: rgba(10, 132, 255, 0.18);
+  --ambient-2: rgba(124, 92, 255, 0.15);
+  --ambient-3: rgba(48, 209, 88, 0.07);
 
-  --surface: #141417;
-  --surface-2: #1e1e22;
+  --surface: #161619;
+  --surface-2: #212126;
 
-  --glass-bg: rgba(22, 22, 26, 0.68);
-  --glass-border: rgba(255, 255, 255, 0.08);
-  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
+  --glass-bg: rgba(28, 28, 33, 0.66);
+  --glass-border: rgba(255, 255, 255, 0.09);
+  --glass-shadow: 0 12px 40px rgba(0, 0, 0, 0.55);
   --glass-blur: 24px;
 
+  --scrim-bg: rgba(22, 22, 26, 0.9);
+  --scrim-blur: 14px;
+  --scrim-veil: rgba(0, 0, 0, 0.5);
+
   --fg: #fafafa;
-  --fg-muted: #a1a1aa;
-  --fg-subtle: #6b6b73;
-  --hairline: rgba(255, 255, 255, 0.08);
+  --fg-muted: #a5a5ae;
+  --fg-subtle: #74747d;
+  --hairline: rgba(255, 255, 255, 0.09);
 
   --accent: #0a84ff;
   --accent-contrast: #ffffff;
   --known: #30d158;
   --available: #0a84ff;
   --ai: #a78bfa;
+  --danger: #ff453a;
   --ring: rgba(10, 132, 255, 0.5);
 
   --graph-label: #e6e6ea;
@@ -160,7 +193,7 @@
   --e1: 0 1px 2px rgba(0, 0, 0, 0.5);
   --e2: 0 6px 18px rgba(0, 0, 0, 0.5), 0 1px 3px rgba(0, 0, 0, 0.35);
   --e3: 0 20px 50px rgba(0, 0, 0, 0.65), 0 2px 10px rgba(0, 0, 0, 0.45);
-  --seam: rgba(255, 255, 255, 0.06);
+  --seam: rgba(255, 255, 255, 0.07);
 }
 
 /* Theme-flip smoothing — scoped to the few surfaces that actually change,
@@ -174,7 +207,7 @@ body {
 /* ---- Craft primitives -------------------------------------------------
    Hierarchy comes from type, space and light — not from outlining boxes. */
 
-/* Display type: big, tight, confident. Never on small text. */
+/* Display type: big, tight, confident. Onboarding and marketing only. */
 .t-hero    { font-size: var(--t-hero);    line-height: 1.02; letter-spacing: -0.03em;  font-weight: 680; }
 .t-display { font-size: var(--t-display); line-height: 1.06; letter-spacing: -0.028em; font-weight: 680; }
 .t-title1  { font-size: var(--t-title1);  line-height: 1.12; letter-spacing: -0.024em; font-weight: 660; }
@@ -182,11 +215,16 @@ body {
 .t-title3  { font-size: var(--t-title3);  line-height: 1.25; letter-spacing: -0.014em; font-weight: 640; }
 .t-headline{ font-size: var(--t-headline);line-height: 1.35; letter-spacing: -0.011em; font-weight: 620; }
 .t-body    { font-size: var(--t-body);    line-height: 1.55; letter-spacing: -0.008em; font-weight: 420; }
+/* The density tier: dense rows, rails, anything metadata-heavy. */
+.t-tight   { font-size: var(--t-tight);   line-height: 1.45; letter-spacing: -0.006em; font-weight: 460; }
 .t-foot    { font-size: var(--t-footnote);line-height: 1.45; font-weight: 450; }
-/* Eyebrow: the only place uppercase + positive tracking belongs. */
+.t-meta    { font-size: var(--t-footnote);line-height: 1.35; font-weight: 480; color: var(--fg-subtle); font-variant-numeric: tabular-nums; }
+/* Eyebrow: the only place uppercase + positive tracking belongs. Deliberately
+   NOT accent-coloured — the accent marks the one action that matters. */
 .t-eyebrow {
   font-size: var(--t-caption); font-weight: 620;
   text-transform: uppercase; letter-spacing: 0.13em;
+  color: var(--fg-subtle);
 }
 
 /* A surface that sits ON the page — depth from light, one hairline seam. */
@@ -197,16 +235,18 @@ body {
   box-shadow: var(--e2);
 }
 
-/* iOS-style grouped list: one container, hairline seams between rows,
-   NO border per row. Replaces stacks of individually-outlined boxes. */
-.group {
+/* iOS-style grouped list: one container, hairline seams between rows, NO
+   border per row. Replaces stacks of individually-outlined boxes.
+   Named `.stack`, not `.group` — `group` is Tailwind's hover marker, and an
+   element carrying both got two competing surface recipes. */
+.stack {
   background: var(--surface);
   border: 1px solid var(--seam);
   border-radius: var(--r-md);
   box-shadow: var(--e1);
   overflow: hidden;
 }
-.group > * + * {
+.stack > * + * {
   border-top: 1px solid var(--seam);
 }
 .row-btn {
@@ -226,6 +266,35 @@ body {
 .row-btn:hover { background: color-mix(in srgb, var(--fg) 4%, transparent); }
 .row-btn:active { background: color-mix(in srgb, var(--fg) 7%, transparent); }
 
+/* Denser row for lists that carry a lot of them. */
+.row-tight { padding: 9px 14px; gap: 10px; }
+
+/* The document column. Content is a document: one measure, generous margins,
+   never full-bleed text. 72ch keeps lines inside the readable band. */
+.doc {
+  width: 100%;
+  max-width: 72ch;
+  margin-inline: auto;
+  padding-inline: 24px;
+}
+.doc--wide { max-width: 92ch; }
+
+/* An affordance that appears on hover — Notion's quiet trick. It occupies its
+   space always (no layout shift), and only its opacity changes. Keyboard focus
+   reveals it too, so it is never mouse-only. */
+.reveal {
+  opacity: 0;
+  transition: opacity 130ms ease, transform 130ms cubic-bezier(.4,0,.2,1);
+  transform: translateX(-2px);
+}
+.row-btn:hover .reveal,
+.reveal-host:hover .reveal,
+.reveal:focus-visible,
+.reveal-host:focus-within .reveal {
+  opacity: 1;
+  transform: none;
+}
+
 /* Pressable: the physical feedback every control should have. */
 .pressable { transition: transform 120ms cubic-bezier(.4,0,.2,1), filter 140ms ease; }
 .pressable:active { transform: scale(0.975); }
@@ -239,7 +308,7 @@ body {
 
 /* The frosted-glass material — for elevated/floating surfaces only.
    Blur is the most expensive effect on the page, so this class is deliberately
-   rationed: the dock, one panel, and an overlay at most. Everything else uses
+   rationed: the rail, the dock, the omnibar, one sheet. Everything else uses
    solid/translucent fills. `contain: paint` keeps the blur from invalidating
    the rest of the tree. */
 .glass {
@@ -265,7 +334,37 @@ body {
 }
 .float--pill { border-radius: var(--r-pill); }
 
-/* Calm ambient backdrop so the glass blur has something to blur. */
+/* `.rail` — the floating navigation sidebar. Same material as the dock, so the
+   two navigations read as the same product wearing a different shape. */
+.rail {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(var(--glass-blur));
+  backdrop-filter: saturate(180%) blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--e3);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* `.sheet` — modal surfaces. Denser than chrome because body text lives on it. */
+.sheet {
+  background: var(--scrim-bg);
+  -webkit-backdrop-filter: saturate(180%) blur(var(--scrim-blur));
+  backdrop-filter: saturate(180%) blur(var(--scrim-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--e3);
+  border-radius: var(--r-lg);
+}
+.sheet-veil {
+  background: var(--scrim-veil);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* Calm ambient backdrop so the glass blur has something to blur. Three drifting
+   fields, no animation — motion here would compete with the content. */
 .abh-ambient {
   position: fixed;
   inset: 0;
@@ -281,7 +380,6 @@ body {
   height: 60vmax;
   border-radius: 50%;
   filter: blur(80px);
-  opacity: 1;
 }
 .abh-ambient::before {
   top: -20vmax;
@@ -293,10 +391,33 @@ body {
   right: -15vmax;
   background: radial-gradient(circle at center, var(--ambient-2), transparent 70%);
 }
+/* The third field, on a child so it can sit between the other two. */
+.abh-ambient > i {
+  position: absolute;
+  top: 35%;
+  right: 18%;
+  width: 34vmax;
+  height: 34vmax;
+  border-radius: 50%;
+  filter: blur(90px);
+  background: radial-gradient(circle at center, var(--ambient-3), transparent 70%);
+}
+
+/* Respect the system settings. Reduced transparency is a real accessibility
+   need, not a preference: fall back to opaque surfaces rather than shipping
+   unreadable text over a blur. */
+@media (prefers-reduced-transparency: reduce) {
+  .glass, .float, .rail, .sheet {
+    background: var(--surface);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
 
 @media (prefers-reduced-motion: reduce) {
   :root,
   :root * {
     transition-duration: 0ms;
+    animation-duration: 0ms;
   }
 }

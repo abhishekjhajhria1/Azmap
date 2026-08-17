@@ -122,6 +122,7 @@ export function App() {
       {snap.suggestions.length > 0 && (
         <section className="section">
           <div className="section-title section-title--ai"><Sparkles size={12} /> AI suggests</div>
+          <div className="items">
           {snap.suggestions.map((s) => (
             <div key={s.id} className="card suggestion">
               <div className="card-title">
@@ -134,6 +135,7 @@ export function App() {
               </div>
             </div>
           ))}
+          </div>
         </section>
       )}
 
@@ -145,7 +147,7 @@ export function App() {
             <span>Nothing unlocked yet — add something you want to learn.</span>
           </div>
         ) : (
-          snap.available.slice(0, 3).map((t) => (
+          <div className="items">{snap.available.slice(0, 3).map((t) => (
             <div key={t.id} className="card">
               <div className="card-title">{t.title}</div>
               {t.whyItMatters && <div className="card-sub">{t.whyItMatters}</div>}
@@ -154,7 +156,7 @@ export function App() {
                 Mark known
               </button>
             </div>
-          ))
+          ))}</div>
         )}
         <div className="add-row">
           <input

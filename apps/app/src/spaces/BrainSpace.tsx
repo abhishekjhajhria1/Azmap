@@ -112,9 +112,22 @@ export function BrainSpace({ focusTopicId, onFocusHandled }: {
       {nodes.length === 0 ? (
         <div className="grid h-full place-items-center px-6 text-center">
           <div>
-            <span className="mx-auto grid h-16 w-16 place-items-center rounded-2xl bg-ai/12 text-ai"><Brain size={30} strokeWidth={1.75} /></span>
-            <h2 className="mt-4 text-xl font-semibold">Your brain is empty — for now</h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm text-muted">Ask how something works, or start a roadmap. Everything you learn lands here and connects.</p>
+            <span
+              className="mx-auto grid h-14 w-14 place-items-center rounded-[18px] text-ai"
+              style={{ background: "color-mix(in srgb, var(--ai) 12%, transparent)" }}
+            >
+              <Brain size={26} strokeWidth={1.75} />
+            </span>
+            <h2 className="t-title3 mt-4">Your brain is empty — for now</h2>
+            <p className="t-tight mx-auto mt-2 max-w-[30rem] text-muted">
+              Everything you learn lands here and connects to what you already know.
+            </p>
+            <button
+              onClick={() => document.dispatchEvent(new KeyboardEvent("keydown", { key: "k", metaKey: true }))}
+              className="pressable mt-5 inline-flex items-center gap-2 rounded-full bg-accent px-5 py-2.5 text-[13.5px] font-semibold text-accent-ink shadow-[var(--e2)] hover:brightness-[1.06]"
+            >
+              <Search size={15} /> Ask how something works
+            </button>
           </div>
         </div>
       ) : (
@@ -125,35 +138,33 @@ export function BrainSpace({ focusTopicId, onFocusHandled }: {
         />
       )}
 
-      {/* Floating on-canvas controls — search and camera without leaving the map. */}
+      {/* One floating toolbar, not two clusters. Search and camera belong to the
+          same job — reading the map — so they share a single piece of chrome
+          with a seam between them. */}
       {nodes.length > 0 && (
         <div
-          className="absolute flex items-center gap-2"
+          className="float float--pill absolute flex items-center py-1.5 pl-3.5 pr-1.5"
           style={{ left: "var(--float-inset)", bottom: "calc(var(--float-inset) + env(safe-area-inset-bottom, 0px))" }}
         >
-          <div className="float float--pill flex items-center gap-2 px-3.5 py-2.5">
-            <Search size={15} className="shrink-0 text-subtle" />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Find on your map…"
-              className="w-36 min-w-0 bg-transparent text-[13px] outline-none placeholder:text-subtle sm:w-52"
-            />
-            {query && (
-              <>
-                <span className="t-foot shrink-0 tabular-nums text-subtle">{matches}</span>
-                <button onClick={() => setQuery("")} className="shrink-0 text-subtle hover:text-fg" aria-label="Clear search">
-                  <X size={14} />
-                </button>
-              </>
-            )}
-          </div>
-
-          <div className="float float--pill flex items-center gap-0.5 p-1.5">
-            <CtlBtn label="Zoom in" onClick={() => setZoomToken((z) => z + 1)}><ZoomIn size={16} /></CtlBtn>
-            <CtlBtn label="Zoom out" onClick={() => setZoomToken((z) => z - 1)}><ZoomOut size={16} /></CtlBtn>
-            <CtlBtn label="Fit to screen" onClick={() => setFitToken((f) => f + 1)}><Maximize2 size={15} /></CtlBtn>
-          </div>
+          <Search size={15} className="shrink-0 text-subtle" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Find on your map…"
+            className="ml-2 w-32 min-w-0 bg-transparent text-[13px] outline-none placeholder:text-subtle sm:w-44"
+          />
+          {query && (
+            <>
+              <span className="t-meta shrink-0 tabular-nums">{matches}</span>
+              <button onClick={() => setQuery("")} className="ml-1.5 shrink-0 text-subtle hover:text-fg" aria-label="Clear search">
+                <X size={14} />
+              </button>
+            </>
+          )}
+          <span className="mx-2 h-5 w-px shrink-0" style={{ background: "var(--glass-border)" }} />
+          <CtlBtn label="Zoom in" onClick={() => setZoomToken((z) => z + 1)}><ZoomIn size={16} /></CtlBtn>
+          <CtlBtn label="Zoom out" onClick={() => setZoomToken((z) => z - 1)}><ZoomOut size={16} /></CtlBtn>
+          <CtlBtn label="Fit to screen" onClick={() => setFitToken((f) => f + 1)}><Maximize2 size={15} /></CtlBtn>
         </div>
       )}
     </div>

@@ -131,19 +131,21 @@ body {
 }
 .section-title--ai { color: var(--ai); }
 
-/* ---- Cards ----------------------------------------------------------- */
-.card {
-  border: 1px solid var(--hairline);
+/* ---- Items ----------------------------------------------------------- */
+/* One surface holding rows separated by seams — not a stack of individually
+   outlined boxes, which is what made 380px of popup feel like a form. */
+.items {
   background: var(--surface);
+  border: 1px solid var(--seam);
   border-radius: var(--r-md);
-  padding: 11px 12px;
-  margin-bottom: 7px;
-  transition: border-color 150ms ease, transform 120ms ease;
+  overflow: hidden;
 }
-.card:hover {
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
-  transform: translateY(-1px);
+.card {
+  padding: 10px 12px;
+  transition: background 140ms ease;
 }
+.card + .card { border-top: 1px solid var(--seam); }
+.card:hover { background: color-mix(in srgb, var(--fg) 4%, transparent); }
 .card-title {
   font-weight: 600;
   font-size: 13.5px;
@@ -155,16 +157,23 @@ body {
   line-height: 1.45;
   color: var(--fg-muted);
 }
-.suggestion {
-  border-color: color-mix(in srgb, var(--ai) 35%, transparent);
-  background: color-mix(in srgb, var(--ai) 7%, var(--surface));
-}
+/* AI keeps its own tint — violet is semantic here, not decoration. */
+.suggestion { background: color-mix(in srgb, var(--ai) 6%, transparent); }
+.suggestion:hover { background: color-mix(in srgb, var(--ai) 10%, transparent); }
 
 .row {
   display: flex;
   gap: 7px;
-  margin-top: 10px;
+  margin-top: 9px;
 }
+
+/* Actions appear on hover — the same quiet affordance the app uses. */
+.done {
+  opacity: 0;
+  transition: opacity 130ms ease;
+}
+.card:hover .done,
+.done:focus-visible { opacity: 1; }
 
 button {
   cursor: pointer;
@@ -191,7 +200,7 @@ button:active { transform: scale(0.98); }
   border: 1px solid var(--hairline);
 }
 .reject:hover { color: var(--fg); }
-.done { margin-top: 10px; }
+.done { margin-top: 9px; }
 
 /* ---- Add row --------------------------------------------------------- */
 .add-row {

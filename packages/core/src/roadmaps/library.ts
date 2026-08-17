@@ -14,7 +14,6 @@ export const ROADMAPS: RoadmapDef[] = [
     title: "Front-End Developer",
     goal: "Build and ship modern web interfaces",
     blurb: "From a blank HTML file to a component-driven app you can deploy.",
-    accent: "#5ea0e9",
     path: [
       { id: "html", title: "HTML", why: "The structure every page is built on.", domain: "web", progress: "known" },
       { id: "css", title: "CSS", why: "Styling — turning structure into design.", domain: "css", needs: ["html"], progress: "known" },
@@ -40,7 +39,6 @@ export const ROADMAPS: RoadmapDef[] = [
     title: "Machine Learning",
     goal: "Understand how models learn from data",
     blurb: "The maths, the code, and the models — in the order they build on each other.",
-    accent: "#e9b949",
     path: [
       { id: "algebra", title: "Algebra", why: "The grammar of every equation ahead.", domain: "math", progress: "known" },
       { id: "linalg", title: "Linear Algebra", why: "Vectors and matrices store data and weights.", domain: "math", needs: ["algebra"] },
@@ -65,7 +63,6 @@ export const ROADMAPS: RoadmapDef[] = [
     title: "Play the Guitar",
     goal: "Go from zero to playing real songs",
     blurb: "Proof the map works for anything — not just code and exams.",
-    accent: "#e9967a",
     path: [
       { id: "parts", title: "Parts & Tuning", why: "Know your instrument and get it in tune.", domain: "theory", progress: "known" },
       { id: "chords", title: "Open Chords", why: "The handful of shapes behind thousands of songs.", domain: "practice", needs: ["parts"] },

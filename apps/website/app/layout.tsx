@@ -37,7 +37,7 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <div className="abh-ambient" aria-hidden />
+          <div className="abh-ambient" aria-hidden><i /></div>
           {children}
         </ThemeProvider>
       </body>

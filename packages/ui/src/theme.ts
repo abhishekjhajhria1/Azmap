@@ -56,25 +56,74 @@ export interface ThemeColors {
   ai: string;
 }
 
+/** Parse `#rgb`, `#rrggbb`, `rgb()` or `rgba()` into channels + alpha. */
+function parseColor(input: string): { r: number; g: number; b: number; a: number } | null {
+  const s = input.trim();
+  const hex = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(s);
+  if (hex) {
+    const h = hex[1]!;
+    const full = h.length === 3 ? h.split("").map((c) => c + c).join("") : h;
+    return {
+      r: parseInt(full.slice(0, 2), 16),
+      g: parseInt(full.slice(2, 4), 16),
+      b: parseInt(full.slice(4, 6), 16),
+      a: 1,
+    };
+  }
+  const rgb = /^rgba?\(([^)]+)\)$/i.exec(s);
+  if (rgb) {
+    const parts = rgb[1]!.split(/[\s,/]+/).filter(Boolean).map(Number);
+    const [r, g, b, a] = parts;
+    if (r === undefined || g === undefined || b === undefined) return null;
+    return { r, g, b, a: a ?? 1 };
+  }
+  return null;
+}
+
+function toHex(n: number): string {
+  return Math.max(0, Math.min(255, Math.round(n))).toString(16).padStart(2, "0");
+}
+
+/**
+ * Flatten a translucent colour onto a background.
+ *
+ * Sigma's WebGL programs take a colour and ignore its alpha channel, so
+ * handing them `rgba(255,255,255,0.13)` painted **solid white** edges that
+ * dominated the whole canvas. The tokens describe the intended blend, so we
+ * resolve it here against the page background and give WebGL an opaque colour
+ * that looks like what the token asked for.
+ */
+export function flatten(color: string, background: string): string {
+  const fg = parseColor(color);
+  const bg = parseColor(background);
+  if (!fg) return color;
+  if (fg.a >= 1) return `#${toHex(fg.r)}${toHex(fg.g)}${toHex(fg.b)}`;
+  const base = bg ?? { r: 255, g: 255, b: 255, a: 1 };
+  const mix = (f: number, b: number) => f * fg.a + b * (1 - fg.a);
+  return `#${toHex(mix(fg.r, base.r))}${toHex(mix(fg.g, base.g))}${toHex(mix(fg.b, base.b))}`;
+}
+
 /** Read the current computed graph tokens — call on init and on theme change. */
 export function readThemeColors(): ThemeColors {
   const fallback: ThemeColors = {
-    label: "#e7ecef",
-    edge: "rgba(116,198,157,0.18)",
-    edgeSoft: "rgba(199,125,255,0.24)",
-    muted: "rgba(116,198,157,0.12)",
-    locked: "#1b3a2b",
-    ai: "#c77dff",
+    label: "#e6e6ea",
+    edge: "#26262b",
+    edgeSoft: "#3a2f55",
+    muted: "#17171b",
+    locked: "#2a2a30",
+    ai: "#a78bfa",
   };
   if (typeof window === "undefined") return fallback;
   const cs = getComputedStyle(document.documentElement);
   const get = (name: string, fb: string) => cs.getPropertyValue(name).trim() || fb;
+  const bg = get("--bg", "#ffffff");
+  // Every value handed to Sigma is flattened: alpha never survives the trip.
   return {
-    label: get("--graph-label", fallback.label),
-    edge: get("--graph-edge", fallback.edge),
-    edgeSoft: get("--graph-edge-soft", fallback.edgeSoft),
-    muted: get("--graph-muted", fallback.muted),
-    locked: get("--graph-locked", fallback.locked),
-    ai: get("--ai", fallback.ai),
+    label: flatten(get("--graph-label", fallback.label), bg),
+    edge: flatten(get("--graph-edge", fallback.edge), bg),
+    edgeSoft: flatten(get("--graph-edge-soft", fallback.edgeSoft), bg),
+    muted: flatten(get("--graph-muted", fallback.muted), bg),
+    locked: flatten(get("--graph-locked", fallback.locked), bg),
+    ai: flatten(get("--ai", fallback.ai), bg),
   };
 }

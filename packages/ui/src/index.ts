@@ -2,7 +2,8 @@ export * from "./theme.js";
 export * from "./breakpoints.js";
 export { ThemeProvider, useTheme, type Theme, type Resolved } from "./ThemeProvider.js";
 export { ThemeToggle } from "./ThemeToggle.js";
-export { AdaptiveShell } from "./AdaptiveShell.js";
+export { AdaptiveShell, useResolvedNav, type NavLayout } from "./AdaptiveShell.js";
+export { NavSidebar, railWidth, type NavSidebarProps, type RailSection } from "./NavSidebar.js";
 export {
   FloatingDock,
   resolveDockPosition,

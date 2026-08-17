@@ -58,7 +58,7 @@ export default function Home() {
                 </a>
                 <a
                   href="#product"
-                  className="rounded-lg border border-hairline px-6 py-3 font-semibold text-fg transition hover:bg-surface-2"
+                  className="rounded-full bg-surface-2 px-6 py-3 font-semibold text-fg shadow-[var(--e1)] transition hover:-translate-y-0.5 hover:shadow-[var(--e2)]"
                 >
                   See how it works
                 </a>
@@ -97,7 +97,7 @@ export default function Home() {
             ["Note apps", "capture everything and organise nothing."],
             ["Roadmap sites", "show a beautiful path, then forget you the moment you close the tab."],
           ].map(([h, p]) => (
-            <div key={h} className="rounded-xl border border-hairline bg-surface p-5">
+            <div key={h} className="rounded-[18px] bg-surface p-5 shadow-[var(--e1)]">
               <div className="font-semibold text-fg">{h}</div>
               <div className="mt-2 text-sm leading-relaxed text-muted">{p}</div>
             </div>
@@ -134,7 +134,7 @@ export default function Home() {
             you have actually come.
           </Pillar>
         </div>
-        <div className="mt-8 rounded-xl border border-accent bg-accent/5 p-5 text-center text-sm text-accent">
+        <div className="mt-8 rounded-[18px] bg-accent/[0.07] p-5 text-center text-sm text-accent">
           Nothing AI proposes joins your map until you tap to accept it.
         </div>
       </Section>
@@ -161,7 +161,7 @@ export default function Home() {
               currently produces.
             </p>
           </div>
-          <div className="rounded-2xl border border-hairline bg-surface p-8">
+          <div className="rounded-[22px] bg-surface p-8 shadow-[var(--e2)]">
             <blockquote className="text-xl font-medium leading-relaxed text-fg">
               &ldquo;The prerequisite links are judgements about what genuinely
               blocks what. Scraping cannot produce them — and a wrong one is
@@ -209,7 +209,7 @@ export default function Home() {
 
       {/* ---- Second brain / capture ---- */}
       <Section className="py-20">
-        <div className="rounded-3xl border border-hairline bg-gradient-to-br from-surface-2 to-bg p-8 sm:p-12">
+        <div className="rounded-[26px] bg-surface-2 p-8 shadow-[var(--e1)] sm:p-12">
           <div className="max-w-3xl">
             <Eyebrow>Where it&apos;s heading</Eyebrow>
             <h2 className="text-balance text-3xl font-bold sm:text-4xl">
@@ -273,7 +273,7 @@ export default function Home() {
 
       {/* ---- Built so far ---- */}
       <Section className="py-20">
-        <div className="rounded-3xl border border-hairline bg-surface p-8 sm:p-12">
+        <div className="rounded-[26px] bg-surface p-8 shadow-[var(--e2)] sm:p-12">
           <Eyebrow>Built so far</Eyebrow>
           <h2 className="max-w-2xl text-balance text-2xl font-bold sm:text-3xl">
             Not a mockup. A working app, built solo — now coming to every screen.
@@ -294,7 +294,7 @@ export default function Home() {
 
       {/* ---- CTA ---- */}
       <Section id="waitlist" className="py-20">
-        <div className="mx-auto max-w-2xl rounded-3xl border border-accent bg-gradient-to-b from-surface-2 to-bg p-10 text-center">
+        <div className="mx-auto max-w-2xl rounded-[26px] bg-surface p-10 text-center shadow-[var(--e3)]">
           <h2 className="text-balance text-3xl font-bold sm:text-4xl">
             Start the map you&apos;ll still be adding to in a year.
           </h2>
@@ -306,7 +306,7 @@ export default function Home() {
               type="email"
               required
               placeholder="you@email.com"
-              className="w-full rounded-lg border border-hairline bg-bg px-4 py-3 text-fg outline-none placeholder:text-subtle focus:border-accent"
+              className="w-full rounded-full bg-surface-2 px-5 py-3 text-fg outline-none ring-1 ring-transparent transition placeholder:text-subtle focus:ring-2 focus:ring-accent"
             />
             <button
               type="submit"

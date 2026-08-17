@@ -22,7 +22,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ThemeProvider>
       {/* Calm ambient backdrop so the glass has something to blur. */}
-      <div className="abh-ambient" aria-hidden />
+      <div className="abh-ambient" aria-hidden><i /></div>
       <CelebrationProvider>
         <App />
       </CelebrationProvider>
