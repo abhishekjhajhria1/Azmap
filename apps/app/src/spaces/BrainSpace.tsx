@@ -144,7 +144,7 @@ export function BrainSpace({ focusTopicId, onFocusHandled }: {
       {nodes.length > 0 && (
         <div
           className="float float--pill absolute flex items-center py-1.5 pl-3.5 pr-1.5"
-          style={{ left: "var(--float-inset)", bottom: "calc(var(--float-inset) + env(safe-area-inset-bottom, 0px))" }}
+          style={{ left: "var(--float-inset)", bottom: "calc(var(--float-inset) + env(safe-area-inset-bottom, 0px) + var(--map-lift, 0px))" }}
         >
           <Search size={15} className="shrink-0 text-subtle" />
           <input

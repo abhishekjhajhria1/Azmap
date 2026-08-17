@@ -45,5 +45,5 @@ body {
 :root { --omni-lift: 12px; }
 @media (max-width: 599px) {
   /* Above the dock, spanning the width — a bar, not a blob over the content. */
-  :root { --omni-lift: 78px; --omni-left: var(--float-inset); }
+  :root { --omni-lift: 78px; --omni-left: var(--float-inset); --map-lift: 140px; }
 }

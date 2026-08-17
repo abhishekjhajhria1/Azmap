@@ -39,6 +39,30 @@ export function domainColor(domain: string | undefined): string {
   return (domain && DOMAIN_COLOR[domain]) || "var(--fg-subtle)";
 }
 
+/**
+ * The colour a node wears on the map — resolved to a concrete value, because
+ * WebGL can't read CSS variables.
+ *
+ * Status, not subject. The map exists to answer "what can I learn next?", so
+ * that is what colour encodes: green for known, accent for open to you now,
+ * neutral for locked. Colouring by domain answered a different question and
+ * made known and available indistinguishable.
+ */
+export function statusColor(status: MapStatus): string {
+  const fallback: Record<MapStatus, string> = {
+    known: "#30d158",
+    in_progress: "#0a84ff",
+    available: "#0a84ff",
+    locked: "#2a2a30",
+  };
+  if (typeof window === "undefined") return fallback[status];
+  const cs = getComputedStyle(document.documentElement);
+  const bg = cs.getPropertyValue("--bg").trim() || "#ffffff";
+  const token =
+    status === "known" ? "--known" : status === "locked" ? "--graph-locked" : "--available";
+  return flatten(cs.getPropertyValue(token).trim() || fallback[status], bg);
+}
+
 /** Status meta. Dots are CSS-var references so they follow the theme. */
 export const STATUS: Record<MapStatus, { label: string; dot: string }> = {
   known: { label: "Known", dot: "var(--known)" },
@@ -54,6 +78,9 @@ export interface ThemeColors {
   muted: string;
   locked: string;
   ai: string;
+  /** Status tones for map nodes — see `statusColor`. */
+  known: string;
+  available: string;
 }
 
 /** Parse `#rgb`, `#rrggbb`, `rgb()` or `rgba()` into channels + alpha. */
@@ -112,6 +139,8 @@ export function readThemeColors(): ThemeColors {
     muted: "#17171b",
     locked: "#2a2a30",
     ai: "#a78bfa",
+    known: "#30d158",
+    available: "#0a84ff",
   };
   if (typeof window === "undefined") return fallback;
   const cs = getComputedStyle(document.documentElement);
@@ -125,5 +154,7 @@ export function readThemeColors(): ThemeColors {
     muted: flatten(get("--graph-muted", fallback.muted), bg),
     locked: flatten(get("--graph-locked", fallback.locked), bg),
     ai: flatten(get("--ai", fallback.ai), bg),
+    known: flatten(get("--known", fallback.known), bg),
+    available: flatten(get("--available", fallback.available), bg),
   };
 }

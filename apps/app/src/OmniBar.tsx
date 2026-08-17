@@ -37,11 +37,9 @@ interface Props {
   onGoToSpace: (id: string) => void;
   onSelectTopic: (id: string) => void;
   onOpenDevices: () => void;
-  /** Left clearance when a rail is showing, so the bar never sits under it. */
-  inset?: number;
 }
 
-export function OmniBar({ onGoToSpace, onSelectTopic, onOpenDevices, inset = 0 }: Props) {
+export function OmniBar({ onGoToSpace, onSelectTopic, onOpenDevices }: Props) {
   const topics = useAbh((s) => s.topics);
   const captures = useAbh((s) => s.captures);
   const explore = useAbh((s) => s.explore);
@@ -182,13 +180,13 @@ export function OmniBar({ onGoToSpace, onSelectTopic, onOpenDevices, inset = 0 }
         className="float float--pill pressable fixed z-40 flex items-center gap-2 px-4 py-2.5 text-[13px] font-medium text-muted"
         style={{
           right: "var(--float-inset)",
-          left: inset ? `${inset}px` : "var(--omni-left, auto)",
+          // Right-anchored on desktop: the bottom-LEFT corner belongs to the
+          // map's own toolbar, and parking this there buried it.
+          left: "var(--omni-left, auto)",
           // Clear the dock on phones (it owns the bottom edge there); on wider
           // screens the dock is at the top, so the bar can sit low.
           bottom:
             "calc(var(--float-inset) + env(safe-area-inset-bottom, 0px) + var(--omni-lift, 76px))",
-          justifyContent: inset ? "flex-start" : undefined,
-          maxWidth: inset ? 280 : undefined,
         }}
       >
         <Search size={15} />

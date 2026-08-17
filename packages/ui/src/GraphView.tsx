@@ -18,11 +18,17 @@ import Sigma from "sigma";
 import { readThemeColors, type ThemeColors } from "./theme.js";
 import { useTheme } from "./ThemeProvider.js";
 
+/** What a node's colour means. Status, not subject — see `buildGraphData`. */
+export type NodeTone = "known" | "available" | "locked";
+
 export interface GraphNode {
   id: string;
   label: string;
-  /** Domain accent colour (stays across themes). */
-  color: string;
+  /**
+   * What this node is, so the view can resolve its colour from live tokens.
+   * A baked colour string would go stale the moment the theme flipped.
+   */
+  tone?: NodeTone;
   /** Ghost = an unaccepted AI suggestion sitting on the frontier. */
   ghost?: boolean;
   /** Locked topics render in a neutral, theme-aware muted tone. */
@@ -65,7 +71,14 @@ function topoKey(nodes: GraphNode[], links: GraphLink[]): string {
  *  domain accents, stored per node, stay). */
 function paintGraph(graph: Graph, c: ThemeColors) {
   graph.forEachNode((id, attr) => {
-    const col = attr.ghost ? c.ai : attr.locked ? c.locked : attr.dcolor;
+    const tone = attr.tone as string | undefined;
+    const col = attr.ghost
+      ? c.ai
+      : attr.locked || tone === "locked"
+        ? c.locked
+        : tone === "known"
+          ? c.known
+          : c.available;
     graph.setNodeAttribute(id, "color", col);
   });
   graph.forEachEdge((id, attr) => {
@@ -221,9 +234,9 @@ export default function GraphView({
         // Square-root so a hub with 12 edges reads as bigger without becoming
         // a planet; the range stays tight enough to look composed.
         size: node.ghost ? 5 : 5 + Math.min(7, Math.sqrt(weight) * 2.6),
-        color: node.color, // painted below from tokens
+        color: "#000000", // painted below from live tokens
         // Kept so a theme flip can recompute colours without a rebuild.
-        dcolor: node.color,
+        tone: node.tone ?? "available",
         ghost: !!node.ghost,
         locked: !!node.locked,
         zIndex: node.ghost ? 2 : 1,

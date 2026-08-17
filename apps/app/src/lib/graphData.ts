@@ -1,10 +1,18 @@
 import type { Edge, MapStatus, ProposedTopic, Topic } from "@abh/core";
-import { domainColor, type GraphLink, type GraphNode } from "@abh/ui";
+import type { GraphLink, GraphNode, NodeTone } from "@abh/ui";
 
 /**
- * Turn store state into GraphView data. Nodes are coloured by domain; locked
- * nodes are muted; pending proposals ride along as ghost nodes with their
- * prerequisite links, so the AI's suggestions sit right on the graph.
+ * Turn store state into GraphView data.
+ *
+ * Nodes are coloured by **status**, not domain. The map's job is to answer one
+ * question — *what can I learn next?* — and colouring by subject answered a
+ * different one while making known and available look identical. Now green is
+ * known, blue is open to you now, neutral is locked, violet is an AI proposal;
+ * size comes from how connected a topic is. Domain still lives on the node as a
+ * tag and in the inspector, where it's useful without competing.
+ *
+ * Pending proposals ride along as ghost nodes with their prerequisite links, so
+ * the AI's suggestions sit right on the graph rather than in a side list.
  */
 export function buildGraphData(
   topics: Topic[],
@@ -18,21 +26,18 @@ export function buildGraphData(
     degree.set(e.to, (degree.get(e.to) ?? 0) + 1);
   }
 
-  // The graph renders on WebGL, so colours must be concrete (no CSS vars). The
-  // neutral "locked" tone is resolved from tokens inside GraphView; here we just
-  // pass the domain accent + a `locked` flag.
-  const concrete = (domain: string | undefined) => {
-    const c = domainColor(domain);
-    return c.startsWith("var(") ? "#8a9298" : c;
-  };
-
-  const nodes: GraphNode[] = topics.map((t) => ({
-    id: t.id,
-    label: t.title,
-    color: concrete(t.tags[0]),
-    locked: (statuses.get(t.id) ?? "locked") === "locked",
-    weight: degree.get(t.id) ?? 0,
-  }));
+  const nodes: GraphNode[] = topics.map((t) => {
+    const status = statuses.get(t.id) ?? "locked";
+    return {
+      id: t.id,
+      label: t.title,
+      // A tone, not a colour: GraphView resolves it from live tokens, so a
+      // theme flip repaints without rebuilding the graph.
+      tone: toTone(status),
+      locked: status === "locked",
+      weight: degree.get(t.id) ?? 0,
+    };
+  });
 
   const present = new Set(topics.map((t) => t.id));
   const links: GraphLink[] = edges
@@ -40,10 +45,16 @@ export function buildGraphData(
     .map((e) => ({ source: e.from, target: e.to, soft: e.strength === "soft" }));
 
   for (const p of proposals) {
-    nodes.push({ id: p.nodeId, label: p.title, color: concrete(p.domain), ghost: true });
+    // Ghosts are painted with the AI tone inside GraphView.
+    nodes.push({ id: p.nodeId, label: p.title, ghost: true });
     for (const from of p.needs) {
       if (present.has(from)) links.push({ source: from, target: p.nodeId, soft: true });
     }
   }
   return { nodes, links };
+}
+
+/** `in_progress` reads as "open to you now" on the map — same tone. */
+function toTone(status: MapStatus): NodeTone {
+  return status === "known" ? "known" : status === "locked" ? "locked" : "available";
 }

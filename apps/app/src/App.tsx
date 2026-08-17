@@ -131,7 +131,6 @@ export function App() {
         onGoToSpace={goToSpace}
         onSelectTopic={(id) => setFocusTopicId(id)}
         onOpenDevices={() => setDevicesOpen(true)}
-        inset={nav === "sidebar" ? (railCollapsed ? 92 : 288) : 0}
       />
 
       {devicesOpen && <DeviceSheet onClose={() => setDevicesOpen(false)} />}
