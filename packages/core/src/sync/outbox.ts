@@ -159,6 +159,41 @@ export class Outbox {
   }
 }
 
+/**
+ * Outbox persistence for the browser.
+ *
+ * `localStorage` rather than IndexedDB on purpose: writes are synchronous, so
+ * a queue entry cannot be lost to a tab closing between the write and the
+ * flush. The payload is a few hundred short strings, well inside the quota.
+ */
+export class LocalStorageSyncState implements SyncStateStore {
+  constructor(
+    private readonly key = "abh:sync",
+    private readonly storage: {
+      getItem(k: string): string | null;
+      setItem(k: string, v: string): void;
+    } = (globalThis as unknown as { localStorage: Storage }).localStorage,
+  ) {}
+
+  async load(): Promise<PersistedSyncState | null> {
+    try {
+      const raw = this.storage.getItem(this.key);
+      return raw ? (JSON.parse(raw) as PersistedSyncState) : null;
+    } catch {
+      return null; // corrupt state must never block startup
+    }
+  }
+
+  async save(state: PersistedSyncState): Promise<void> {
+    try {
+      this.storage.setItem(this.key, JSON.stringify(state));
+    } catch {
+      // Quota or a private-mode restriction: the in-memory outbox still works,
+      // it just won't survive a restart. Losing sync is not worth crashing over.
+    }
+  }
+}
+
 type AnyRecord = Topic | Edge | Roadmap | Suggestion | Guardian | Capture;
 
 async function readAll(storage: StorageAdapter, c: Collection): Promise<AnyRecord[]> {

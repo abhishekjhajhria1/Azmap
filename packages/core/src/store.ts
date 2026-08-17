@@ -65,6 +65,18 @@ export class MapStore {
     return { topics, edges };
   }
 
+  /**
+   * Per-collection reads, so a UI that needs one collection doesn't pay for a
+   * full `export()` of all six. Reloading only what changed is the difference
+   * between a mutation costing one store read and costing the whole database.
+   */
+  async allRoadmaps(): Promise<Roadmap[]> {
+    return this.storage.getRoadmaps();
+  }
+  async allCaptures(): Promise<Capture[]> {
+    return this.storage.getCaptures();
+  }
+
   // ---- Topics -------------------------------------------------------------
 
   async addTopic(input: NewTopicInput): Promise<Topic> {

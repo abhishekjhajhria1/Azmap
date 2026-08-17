@@ -32,6 +32,7 @@ export {
 export {
   LocalOnlySync,
   LocalStorageRelayLog,
+  LocalStorageSyncState,
   LoopbackSyncAdapter,
   MemoryRelayLog,
   MemorySyncState,

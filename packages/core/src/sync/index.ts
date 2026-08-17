@@ -28,7 +28,7 @@ export type {
   SyncEngineOptions,
   SyncResult,
 } from "./engine.js";
-export { Outbox, TrackedStorage } from "./outbox.js";
+export { LocalStorageSyncState, Outbox, TrackedStorage } from "./outbox.js";
 export {
   LocalStorageRelayLog,
   LoopbackSyncAdapter,
