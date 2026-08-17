@@ -30,6 +30,9 @@ export {
   type SuggestionInput,
   type ProposedTopic,
 } from "./suggest/index.js";
+// The AI seam. `Mind` is the only thing an app should talk to; `LocalMind` is
+// the always-present floor that works with no model and no network.
+export * from "./mind/index.js";
 export * from "./account/index.js";
 export {
   EncryptedSyncAdapter,
