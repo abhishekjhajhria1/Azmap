@@ -15,6 +15,7 @@ import '../design/survey.dart';
 import '../design/tokens.dart';
 import '../domain/graph.dart';
 import '../domain/models.dart';
+import '../prefs/preferences.dart';
 import '../state/map_controller.dart';
 
 class RoadmapSpace extends StatelessWidget {
@@ -26,6 +27,8 @@ class RoadmapSpace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AbhTheme.of(context);
+    final m = AbhTheme.metricsOf(context);
+    final prefs = PrefsScope.valueOf(context);
     final map = MapScope.of(context);
     final open = map.availableNow;
 
@@ -41,7 +44,7 @@ class RoadmapSpace extends StatelessWidget {
     final index = GraphIndex(map.graph);
 
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      padding: EdgeInsets.symmetric(horizontal: m.pagePadH),
       children: [
         Text('ROADMAP', style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
         const SizedBox(height: 10),
@@ -59,29 +62,39 @@ class RoadmapSpace extends StatelessWidget {
           // The one thing to do. Display serif at full size — this is the only
           // place on the screen that gets to shout.
           Text(next.title, style: AbhText.title1.copyWith(color: c.fg)),
-          if (next.whyItMatters.isNotEmpty) ...[
-            const SizedBox(height: 10),
+          // The guidance preference, made concrete. "Just the map" means the
+          // title and the action, nothing else competing for the same glance.
+          if (prefs.guidance == Guidance.full && next.whyItMatters.isNotEmpty) ...[
+            SizedBox(height: m.gap),
             Text(next.whyItMatters, style: AbhText.body.copyWith(color: c.fgMuted)),
           ],
-          const SizedBox(height: 18),
+          SizedBox(height: m.sectionGap - 8),
           _PrimaryAction(
             label: 'Mark known',
             onTap: () => onCelebrate(map.complete(next.id)),
           ),
-          const SizedBox(height: 10),
-          _UnlockHint(count: wouldUnlock(next.id, map.graph).length),
+          if (prefs.guidance == Guidance.full) ...[
+            SizedBox(height: m.gap),
+            _UnlockHint(count: wouldUnlock(next.id, map.graph).length),
+          ],
         ],
 
-        const SizedBox(height: 30),
+        SizedBox(height: m.sectionGap),
         Row(
           children: [
             Text('YOUR PATH', style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
             const Spacer(),
-            Text('${map.percentKnown}% known',
-                style: AbhText.foot.copyWith(color: c.fgSubtle)),
+            // "Count nothing" means exactly that — no number, not a zero and
+            // not a placeholder. The list itself is the progress.
+            if (prefs.progressStyle == ProgressStyle.percent)
+              Text('${map.percentKnown}% known',
+                  style: AbhText.foot.copyWith(color: c.fgSubtle))
+            else if (prefs.progressStyle == ProgressStyle.streak)
+              Text('${map.topics.where((t) => t.progress == Progress.known).length} done',
+                  style: AbhText.foot.copyWith(color: c.fgSubtle)),
           ],
         ),
-        const SizedBox(height: 10),
+        SizedBox(height: m.gap),
         Stacked(
           children: [
             for (final t in map.topics)
@@ -89,6 +102,7 @@ class RoadmapSpace extends StatelessWidget {
                 topic: t,
                 status: map.statuses[t.id] ?? MapStatus.locked,
                 unlocks: index.outgoing[t.id]?.length ?? 0,
+                guidance: prefs.guidance,
                 onToggle: () {
                   if (t.progress == Progress.known) {
                     map.setProgress(t.id, Progress.notStarted);
@@ -109,17 +123,20 @@ class _PathRow extends StatelessWidget {
     required this.topic,
     required this.status,
     required this.unlocks,
+    required this.guidance,
     required this.onToggle,
   });
 
   final Topic topic;
   final MapStatus status;
   final int unlocks;
+  final Guidance guidance;
   final VoidCallback onToggle;
 
   @override
   Widget build(BuildContext context) {
     final c = AbhTheme.of(context);
+    final m = AbhTheme.metricsOf(context);
     final locked = status == MapStatus.locked;
     final known = status == MapStatus.known;
 
@@ -133,11 +150,16 @@ class _PathRow extends StatelessWidget {
         // rather than by showing an error after the fact.
         onTap: locked ? null : onToggle,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
-          child: Row(
+          // Density moves the padding; the ConstrainedBox below keeps the row a
+          // legal tap target regardless of what density asked for.
+          padding: EdgeInsets.symmetric(
+              horizontal: m.rowPadH, vertical: m.rowPadV),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(minHeight: Metrics.tapTarget - 12),
+            child: Row(
             children: [
               _StatusDot(status: status),
-              const SizedBox(width: 12),
+              SizedBox(width: m.gap + 2),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,6 +170,7 @@ class _PathRow extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: AbhText.headline.copyWith(
+                        fontSize: 16 * m.textScale,
                         // Locked rows recede rather than disappear: you should
                         // be able to see what's ahead of you on the path.
                         color: locked ? c.fgSubtle : c.fg,
@@ -155,7 +178,7 @@ class _PathRow extends StatelessWidget {
                         decorationColor: c.fgSubtle,
                       ),
                     ),
-                    if (locked && unlocks == 0)
+                    if (guidance == Guidance.full && locked && unlocks == 0)
                       Padding(
                         padding: const EdgeInsets.only(top: 2),
                         child: Text('Locked — finish what comes before it',
@@ -164,10 +187,11 @@ class _PathRow extends StatelessWidget {
                   ],
                 ),
               ),
-              if (!locked && !known && unlocks > 0)
+              if (guidance == Guidance.full && !locked && !known && unlocks > 0)
                 Text('opens $unlocks',
                     style: AbhText.foot.copyWith(color: c.fgSubtle)),
             ],
+          ),
           ),
         ),
       ),

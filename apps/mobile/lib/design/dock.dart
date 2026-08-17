@@ -32,10 +32,22 @@ extension SpaceLabel on Space {
 }
 
 class FloatingDock extends StatelessWidget {
-  const FloatingDock({super.key, required this.active, required this.onSelect});
+  const FloatingDock({
+    super.key,
+    required this.active,
+    required this.onSelect,
+    this.onLongPress,
+  });
 
   final Space active;
   final ValueChanged<Space> onSelect;
+
+  /// Long-press anywhere on the dock opens Settings.
+  ///
+  /// A shortcut, never the only route — an undiscoverable gesture as the sole
+  /// path to a screen is a screen most people never find. People space carries
+  /// the visible entry.
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -50,7 +62,9 @@ class FloatingDock extends StatelessWidget {
         // the item rather than with the panel.
         final itemWidth = (box.maxWidth - 12) / spaces.length;
 
-        return GlassPanel(
+        return GestureDetector(
+          onLongPress: onLongPress,
+          child: GlassPanel(
           radius: Radii.lg,
           padding: const EdgeInsets.all(6),
           child: SizedBox(
@@ -59,7 +73,8 @@ class FloatingDock extends StatelessWidget {
               children: [
                 // The lozenge. One widget that moves, not four that fade.
                 AnimatedPositioned(
-                  duration: const Duration(milliseconds: 240),
+                  duration: AbhTheme.durationOf(
+                      context, const Duration(milliseconds: 240)),
                   curve: Curves.easeOutCubic,
                   left: itemWidth * active.index,
                   width: itemWidth,
@@ -87,6 +102,7 @@ class FloatingDock extends StatelessWidget {
                 ),
               ],
             ),
+          ),
           ),
         );
       },

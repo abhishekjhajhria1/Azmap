@@ -16,10 +16,15 @@ import 'package:flutter/widgets.dart';
 import '../design/survey.dart';
 import '../design/tokens.dart';
 import '../domain/models.dart';
+import '../prefs/preferences.dart';
 import '../state/map_controller.dart';
 
 class PeopleSpace extends StatelessWidget {
-  const PeopleSpace({super.key});
+  const PeopleSpace({super.key, required this.onOpenSettings});
+
+  /// The visible route into Settings. The dock's long-press is a shortcut for
+  /// people who find it; this is for everyone else.
+  final VoidCallback onOpenSettings;
 
   @override
   Widget build(BuildContext context) {
@@ -30,9 +35,25 @@ class PeopleSpace extends StatelessWidget {
       ..sort((a, b) => (b.completedAt ?? 0).compareTo(a.completedAt ?? 0));
 
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      padding: EdgeInsets.symmetric(horizontal: AbhTheme.metricsOf(context).pagePadH),
       children: [
-        Text('PEOPLE', style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
+        Row(
+          children: [
+            Expanded(
+              child:
+                  Text('PEOPLE', style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
+            ),
+            GestureDetector(
+              onTap: onOpenSettings,
+              child: Container(
+                height: Metrics.tapTarget,
+                alignment: Alignment.centerRight,
+                child: Text('Settings',
+                    style: AbhText.foot.copyWith(color: c.accent)),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
         Text('Nobody is watching yet.',
             style: AbhText.title1.copyWith(color: c.fg)),
@@ -50,8 +71,10 @@ class PeopleSpace extends StatelessWidget {
             Text('WHAT THEY WOULD SEE',
                 style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
             const Spacer(),
-            Text('${map.percentKnown}% known',
-                style: AbhText.foot.copyWith(color: c.fgSubtle)),
+            if (PrefsScope.valueOf(context).progressStyle !=
+                ProgressStyle.none)
+              Text('${map.percentKnown}% known',
+                  style: AbhText.foot.copyWith(color: c.fgSubtle)),
           ],
         ),
         const SizedBox(height: 10),
@@ -67,8 +90,9 @@ class PeopleSpace extends StatelessWidget {
             children: [
               for (final t in known.take(12))
                 Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: AbhTheme.metricsOf(context).rowPadH,
+                      vertical: AbhTheme.metricsOf(context).rowPadV),
                   child: Row(
                     children: [
                       Expanded(

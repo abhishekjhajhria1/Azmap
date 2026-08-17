@@ -17,6 +17,7 @@ import '../design/survey.dart';
 import '../design/tokens.dart';
 import '../domain/models.dart';
 import '../mind/local_mind.dart';
+import '../prefs/preferences.dart';
 import '../state/map_controller.dart';
 
 class CaptureSpace extends StatefulWidget {
@@ -57,6 +58,8 @@ class _CaptureSpaceState extends State<CaptureSpace> {
   @override
   Widget build(BuildContext context) {
     final c = AbhTheme.of(context);
+    final m = AbhTheme.metricsOf(context);
+    final prefs = PrefsScope.valueOf(context);
     final map = MapScope.of(context);
 
     final links = LocalMind()
@@ -65,7 +68,7 @@ class _CaptureSpaceState extends State<CaptureSpace> {
         .toList();
 
     return ListView(
-      padding: const EdgeInsets.symmetric(horizontal: 22),
+      padding: EdgeInsets.symmetric(horizontal: m.pagePadH),
       children: [
         Text('CAPTURE', style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
         const SizedBox(height: 10),
@@ -81,9 +84,11 @@ class _CaptureSpaceState extends State<CaptureSpace> {
             children: [
               Text('CONNECTIONS',
                   style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
-              const SizedBox(width: 8),
-              Text('found on this device',
-                  style: AbhText.foot.copyWith(color: c.fgSubtle)),
+              if (prefs.guidance == Guidance.full) ...[
+                const SizedBox(width: 8),
+                Text('found on this device',
+                    style: AbhText.foot.copyWith(color: c.fgSubtle)),
+              ],
             ],
           ),
           const SizedBox(height: 10),
@@ -129,7 +134,8 @@ class _CaptureSpaceState extends State<CaptureSpace> {
             children: [
               for (final capture in map.captures)
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                  padding: EdgeInsets.symmetric(
+                      horizontal: m.rowPadH, vertical: m.rowPadV),
                   child: Row(
                     children: [
                       Expanded(
@@ -315,7 +321,7 @@ class _ConnectionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = AbhTheme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+      padding: const EdgeInsets.fromLTRB(14, 10, 8, 10),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

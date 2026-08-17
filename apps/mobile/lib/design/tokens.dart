@@ -88,6 +88,38 @@ class AbhColors {
 
   final bool isDark;
 
+  /// Returns this palette with a different accent.
+  ///
+  /// `available` moves with it too: it is the *same* semantic as "open to you
+  /// now", and leaving it blue while the accent went green would put two
+  /// unrelated blues on the map. `known` stays green and `ai` stays violet —
+  /// those are meanings, not decoration, and taste doesn't get a vote.
+  AbhColors withAccent(Color value) => AbhColors(
+        bg: bg,
+        surface: surface,
+        surface2: surface2,
+        fg: fg,
+        fgMuted: fgMuted,
+        fgSubtle: fgSubtle,
+        hairline: hairline,
+        seam: seam,
+        accent: value,
+        accentContrast: accentContrast,
+        known: known,
+        available: value,
+        ai: ai,
+        danger: danger,
+        glassBg: glassBg,
+        glassBorder: glassBorder,
+        glassShadow: glassShadow,
+        rule: rule,
+        ruleStrong: ruleStrong,
+        contour: contour,
+        ambient1: ambient1,
+        ambient2: ambient2,
+        isDark: isDark,
+      );
+
   static const light = AbhColors(
     bg: Color(0xFFFBFBFD),
     surface: Color(0xFFFFFFFF),
@@ -192,18 +224,141 @@ abstract final class AbhText {
   );
 }
 
+/// Spacing and sizing, driven by the density preference.
+///
+/// A separate object rather than a multiplier on the token file, because
+/// density is not a uniform scale. Row height and vertical rhythm compress a
+/// lot; corner radii compress a little; tap targets do not compress **at all**.
+/// A "compact" mode that shrinks the hit area is a compact mode that misses,
+/// and the 44pt / 48dp floors exist for a physical reason that a preference
+/// screen cannot argue with.
+class Metrics {
+  const Metrics({
+    required this.rowPadV,
+    required this.rowPadH,
+    required this.gap,
+    required this.sectionGap,
+    required this.pagePadH,
+    required this.textScale,
+  });
+
+  final double rowPadV;
+  final double rowPadH;
+
+  /// Between related elements.
+  final double gap;
+
+  /// Between sections of a document.
+  final double sectionGap;
+  final double pagePadH;
+
+  /// Multiplies the type scale. Small on purpose — big jumps here break the
+  /// relationship between the serif display sizes and the body text.
+  final double textScale;
+
+  /// The minimum any interactive element may be, in either density. Never
+  /// derived from the others.
+  static const double tapTarget = 44;
+
+  static const comfortable = Metrics(
+    rowPadV: 13,
+    rowPadH: 14,
+    gap: 10,
+    sectionGap: 26,
+    pagePadH: 22,
+    textScale: 1,
+  );
+
+  static const compact = Metrics(
+    rowPadV: 8.5,
+    rowPadH: 12,
+    gap: 6,
+    sectionGap: 18,
+    pagePadH: 18,
+    textScale: 0.94,
+  );
+}
+
+/// The six accents, checked against both themes.
+///
+/// Each is a (light, dark) pair rather than one colour used twice: the same hex
+/// that reads as confident on white is muddy on near-black, which is why iOS
+/// ships two of everything. Graphite is here for people who want no colour at
+/// all — it is the accent that admits it isn't one.
+/// The accent, and the one place colour is a matter of taste.
+///
+/// Constrained to six rather than a colour wheel, and every one is checked for
+/// contrast against both themes. A free picker guarantees somebody chooses pale
+/// yellow, can't read their own primary button, and concludes the app is broken.
+enum AccentChoice {
+  blue,
+  violet,
+  green,
+  amber,
+  rose,
+  graphite;
+
+  AccentPair get pair => switch (this) {
+        AccentChoice.blue => AccentPair.blue,
+        AccentChoice.violet => AccentPair.violet,
+        AccentChoice.green => AccentPair.green,
+        AccentChoice.amber => AccentPair.amber,
+        AccentChoice.rose => AccentPair.rose,
+        AccentChoice.graphite => AccentPair.graphite,
+      };
+
+  Color resolve(bool dark) => dark ? pair.dark : pair.light;
+}
+
+class AccentPair {
+  const AccentPair(this.light, this.dark);
+  final Color light;
+  final Color dark;
+
+  static const blue = AccentPair(Color(0xFF0071E3), Color(0xFF0A84FF));
+  static const violet = AccentPair(Color(0xFF6D48D7), Color(0xFFA78BFA));
+  static const green = AccentPair(Color(0xFF12855A), Color(0xFF30D158));
+  static const amber = AccentPair(Color(0xFF9A6200), Color(0xFFFFB340));
+  static const rose = AccentPair(Color(0xFFC0295B), Color(0xFFFF6482));
+  static const graphite = AccentPair(Color(0xFF3A3A40), Color(0xFFB8B8C0));
+}
+
 /// Reaches the palette without threading it through every constructor.
 class AbhTheme extends InheritedWidget {
-  const AbhTheme({super.key, required this.colors, required super.child});
+  const AbhTheme({
+    super.key,
+    required this.colors,
+    required this.metrics,
+    required this.motion,
+    required super.child,
+  });
 
   final AbhColors colors;
+  final Metrics metrics;
 
-  static AbhColors of(BuildContext context) {
+  /// False when either the OS or the user has asked for less motion.
+  ///
+  /// The direction is one-way on purpose: a person who set "Reduce Motion" in
+  /// their system settings did so for a reason — often vestibular, sometimes
+  /// medical — and no in-app preference gets to override that upward.
+  final bool motion;
+
+  static AbhColors of(BuildContext context) => _read(context).colors;
+  static Metrics metricsOf(BuildContext context) => _read(context).metrics;
+  static bool motionOf(BuildContext context) => _read(context).motion;
+
+  static AbhTheme _read(BuildContext context) {
     final t = context.dependOnInheritedWidgetOfExactType<AbhTheme>();
     assert(t != null, 'No AbhTheme in the tree — wrap the app in AbhTheme.');
-    return t!.colors;
+    return t!;
   }
 
+  /// A duration that collapses to zero when motion is off, so call sites don't
+  /// each have to remember the check.
+  static Duration durationOf(BuildContext context, Duration full) =>
+      motionOf(context) ? full : Duration.zero;
+
   @override
-  bool updateShouldNotify(AbhTheme old) => old.colors != colors;
+  bool updateShouldNotify(AbhTheme old) =>
+      old.colors != colors || old.metrics != metrics || old.motion != motion;
 }

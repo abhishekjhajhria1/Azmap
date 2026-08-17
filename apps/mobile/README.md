@@ -15,14 +15,65 @@ at all, not a sign something is conceptually wrong.
 | `lib/domain/` | Records, the unlock engine, the merge order |
 | `lib/data/` | SQLite schema, repository, device identity |
 | `lib/state/` | `MapController` + `MapScope` |
-| `lib/design/` | Tokens, survey ground, glass, the dock |
+| `lib/design/` | Tokens, metrics, survey ground, glass, dock, controls |
+| `lib/prefs/` | The preference model and its persistence |
+| `lib/onboarding/` | Four questions, each with a live preview |
+| `lib/settings/` | Everything onboarding asked, plus what it didn't |
 | `lib/mind/` | On-device matching — no model, no network |
 | `lib/spaces/` | Brain, Roadmap, Capture, People |
-| `test/` | Conformance corpus + `LocalMind` |
+| `test/` | Conformance corpus, `LocalMind`, preferences |
 
 **Not done yet:** sync (the schema carries the envelope for it, but nothing
-talks to the relay), onboarding, the share-sheet capture target, the omni-search
-sheet, and the guide reader.
+talks to the relay), the share-sheet capture target, the omni-search sheet, and
+the guide reader.
+
+## Adaptive by preference, not by profiling
+
+Nine settings, and each one earns its place by the same test: **two reasonable
+people want opposite things from it.** A setting everybody would set the same
+way isn't a setting, it's a bug in the default.
+
+| | |
+|---|---|
+| Density | How much fits on a screen |
+| Guidance | How much the app explains itself |
+| Progress | Streak, percentage, or nothing |
+| Home space | Which space opens on launch |
+| Dock | Auto / bottom / top |
+| Theme | System / light / dark |
+| Accent | Six, each a light/dark pair |
+| Survey ground | The drawn grid, on or off |
+| Reduce motion | Adds restraint; never removes it |
+
+**No personality quiz.** "Are you a Visual Learner" produces a label that
+predicts nothing, from a theory that doesn't replicate. Every question asks
+about an observable preference instead.
+
+**Every question has a live preview** — the real widgets under the real theme,
+not a picture of them. Asking someone on day zero whether they prefer compact
+rows is unanswerable: compared to what? So they look at compact rows and decide.
+Nothing can drift out of sync with the app because the preview *is* the app.
+
+Four questions in onboarding, everything else in Settings. Each question is
+weighed against the cost of somebody abandoning setup, which is the most
+expensive thing that can happen on a first run. "Set this up later" is always
+visible and never styled to be avoided.
+
+Two rules the whole system obeys:
+
+- **Density never shrinks a tap target.** Rows compress, type compresses, hit
+  areas do not. A compact mode that misses is not compact, it's broken. The
+  44dp floor is a constant, not a function of density.
+- **Motion is one-way.** The OS setting can turn animation off; the app
+  preference can only *also* turn it off. Someone who asked their phone for
+  less motion usually did so for a vestibular or medical reason.
+
+The one worth arguing about is progress. Streaks are the most effective
+retention mechanic in consumer software *and* actively harmful to a real
+fraction of people — miss a day, watch a number reset, quit rather than face it.
+Both effects are real. So it's a choice, the onboarding copy says why in plain
+words, and "count nothing" is a first-class option rather than a hidden escape
+hatch.
 
 ## First run
 
