@@ -1,20 +1,30 @@
 import { useAbh } from "@abh/ui";
-import { ArrowRight, Globe, Inbox, Plus, StickyNote } from "lucide-react";
+import type { ProposedLink } from "@abh/core";
+import { ArrowRight, Check, Globe, Inbox, Link2, Plus, StickyNote, X } from "lucide-react";
 import { useState } from "react";
 
 /**
- * Capture — the inbox for things you grab. Its job is speed: one field, one
- * key, done. Connecting a capture to the map is a separate, later step, so
- * nothing blocks the save.
+ * Capture — the inbox, and the part that makes it a brain.
+ *
+ * Catching things is the easy half and was already solved: one field, one key,
+ * done. The hard half is that a pile of forty saved articles is a pile, not a
+ * brain. What makes it worth keeping is that the things in it find each other —
+ * so the map's own suggestions sit directly above the inbox, where the pile you
+ * haven't filed is visible in the same glance as the offer to file it.
  */
 export function CaptureSpace() {
   const captures = useAbh((s) => s.captures);
+  const topics = useAbh((s) => s.topics);
+  const connections = useAbh((s) => s.connections);
   const addCapture = useAbh((s) => s.addCapture);
+  const acceptLink = useAbh((s) => s.acceptLink);
+  const dismissLink = useAbh((s) => s.dismissLink);
   const explore = useAbh((s) => s.explore);
   const [text, setText] = useState("");
   const [connected, setConnected] = useState<Set<string>>(new Set());
 
   const recent = [...captures].sort((a, b) => b.createdAt - a.createdAt);
+  const titleOf = (id: string) => topics.find((t) => t.id === id)?.title ?? "";
 
   async function add() {
     const t = text.trim();
@@ -62,6 +72,29 @@ export function CaptureSpace() {
           <Plus size={18} strokeWidth={2.5} />
         </button>
       </div>
+
+      {/* The brain noticing something. Above the inbox because it's the part
+          that's worth acting on — the pile below will still be there. */}
+      {connections.length > 0 && (
+        <div className="mt-9">
+          <div className="mb-3 flex items-baseline gap-2 px-1">
+            <span className="t-eyebrow text-subtle">Connections</span>
+            <span className="t-foot text-subtle">found on this device</span>
+          </div>
+          <div className="stack">
+            {connections.map((link) => (
+              <ConnectionRow
+                key={`${link.kind}:${link.fromId}:${link.toId}:${link.draft?.title ?? ""}`}
+                link={link}
+                captureTitle={captures.find((c) => c.id === link.fromId)?.title ?? ""}
+                titleOf={titleOf}
+                onAccept={() => void acceptLink(link)}
+                onDismiss={() => dismissLink(link)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="mt-9">
         <div className="mb-3 flex items-baseline justify-between px-1">
@@ -117,4 +150,73 @@ export function CaptureSpace() {
      </div>
     </div>
   );
+}
+
+/**
+ * One proposed connection.
+ *
+ * Built around the sentence, not the buttons. An unexplained suggestion is one
+ * the user has to audit themselves, which costs more than it saves — so the
+ * reason the app noticed ("shares *gradient* and *descent*") is the row's
+ * content, and accept/dismiss are quiet marks at the end of it.
+ *
+ * No confidence score on screen. It's a ranking signal, not a probability, and
+ * showing "72%" would invite people to trust a number that doesn't mean what it
+ * appears to mean.
+ */
+function ConnectionRow({
+  link,
+  captureTitle,
+  titleOf,
+  onAccept,
+  onDismiss,
+}: {
+  link: ProposedLink;
+  captureTitle: string;
+  titleOf: (id: string) => string;
+  onAccept: () => void;
+  onDismiss: () => void;
+}) {
+  const headline =
+    link.kind === "capture-newtopic"
+      ? `Add “${link.draft?.title ?? ""}” to your map`
+      : link.kind === "capture-topic"
+        ? `File “${truncate(captureTitle)}” under ${titleOf(link.toId)}`
+        : `Link ${titleOf(link.fromId)} → ${titleOf(link.toId)}`;
+
+  return (
+    <div className="row-btn row-tight reveal-host cursor-default">
+      <span
+        className="grid h-9 w-9 shrink-0 place-items-center rounded-xl text-ai"
+        style={{ background: "color-mix(in srgb, var(--ai) 13%, transparent)" }}
+      >
+        <Link2 size={15} />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[14.5px] font-medium">{headline}</span>
+        <span className="mt-0.5 block truncate text-[12.5px] text-muted">{link.why}</span>
+      </span>
+      <span className="flex shrink-0 items-center gap-1">
+        <button
+          onClick={onDismiss}
+          aria-label="Dismiss this suggestion"
+          className="reveal pressable grid h-8 w-8 place-items-center rounded-full text-subtle hover:text-fg"
+        >
+          <X size={15} />
+        </button>
+        <button
+          onClick={onAccept}
+          aria-label={headline}
+          className="pressable grid h-8 w-8 place-items-center rounded-full text-accent transition hover:brightness-110"
+          style={{ background: "color-mix(in srgb, var(--accent) 14%, transparent)" }}
+        >
+          <Check size={15} />
+        </button>
+      </span>
+    </div>
+  );
+}
+
+function truncate(s: string, n = 42): string {
+  return s.length > n ? `${s.slice(0, n - 1)}…` : s;
 }

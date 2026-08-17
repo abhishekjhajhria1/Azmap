@@ -68,7 +68,13 @@ describe("encryption", () => {
   it("refuses tampered ciphertext instead of returning garbage", async () => {
     const key = await generateAccountKey();
     const sealed = await seal(key, { progress: "known" });
-    const flipped = { ...sealed, ct: `A${sealed.ct.slice(1)}` };
+    // Pick a replacement that is guaranteed to differ. Hardcoding "A" made this
+    // a no-op — and so a passing test — roughly one run in sixty-four, whenever
+    // the ciphertext already began with "A".
+    const flipped = {
+      ...sealed,
+      ct: `${sealed.ct[0] === "A" ? "B" : "A"}${sealed.ct.slice(1)}`,
+    };
     await expect(open(key, flipped)).rejects.toThrow();
   });
 

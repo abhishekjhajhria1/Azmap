@@ -566,6 +566,40 @@ export class MapStore {
     return capture;
   }
 
+  /**
+   * File a capture against a topic that already exists.
+   *
+   * Until this existed, "connect" could only mean `explore()` — mint a brand
+   * new node from the capture's title. That quietly guaranteed duplicates: save
+   * three articles about backpropagation and the map grows three nodes for it,
+   * each with its own prerequisites, and nothing in the product ever merges
+   * them again. A second brain whose contents can't point at each other is a
+   * list with extra steps.
+   *
+   * Idempotent, and silent on an unknown capture — this runs from proposal
+   * accept buttons, where the record may have been deleted on another device
+   * between the proposal being computed and the tap landing.
+   */
+  async linkCapture(captureId: string, topicId: string): Promise<Capture | null> {
+    const captures = await this.storage.getCaptures();
+    const capture = captures.find((c) => c.id === captureId);
+    if (!capture) return null;
+    if (capture.linkedTopicIds.includes(topicId)) return capture;
+
+    const g = await this.graph();
+    if (!g.topics.some((t) => t.id === topicId)) return null;
+
+    const next: Capture = {
+      ...capture,
+      linkedTopicIds: [...capture.linkedTopicIds, topicId],
+      updatedAt: now(),
+      rev: capture.rev + 1,
+      deviceId: await this.storage.getDeviceId(),
+    };
+    await this.storage.putCapture(next);
+    return next;
+  }
+
   // ---- Portability --------------------------------------------------------
 
   export() {

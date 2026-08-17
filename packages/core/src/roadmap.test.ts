@@ -111,6 +111,35 @@ describe("explore (curiosity feeds the second brain)", () => {
   });
 });
 
+describe("linkCapture (a second brain whose contents point at each other)", () => {
+  it("files a capture against an existing topic instead of minting a duplicate", async () => {
+    const topic = await store.addTopic({ title: "Backpropagation" });
+    const capture = await store.addCapture({ kind: "page", title: "Backprop explained" });
+
+    const linked = await store.linkCapture(capture.id, topic.id);
+    expect(linked?.linkedTopicIds).toEqual([topic.id]);
+    expect(linked?.rev).toBe(capture.rev + 1);
+    // The map didn't grow — that's the whole point.
+    expect((await store.graph()).topics).toHaveLength(1);
+  });
+
+  it("is idempotent, so a double-tap can't duplicate the link", async () => {
+    const topic = await store.addTopic({ title: "Backpropagation" });
+    const capture = await store.addCapture({ kind: "page", title: "Backprop" });
+    await store.linkCapture(capture.id, topic.id);
+    const again = await store.linkCapture(capture.id, topic.id);
+    expect(again?.linkedTopicIds).toEqual([topic.id]);
+  });
+
+  it("returns null rather than throwing when either end is gone", async () => {
+    // Proposals are computed before they're tapped, and another device may have
+    // deleted the record in between. That's ordinary, not exceptional.
+    const capture = await store.addCapture({ kind: "note", title: "Orphan" });
+    expect(await store.linkCapture(capture.id, "t_missing")).toBeNull();
+    expect(await store.linkCapture("c_missing", "t_missing")).toBeNull();
+  });
+});
+
 describe("profile", () => {
   it("creates on first ensure and persists onboarding", async () => {
     const p = await store.ensureProfile("Aanya");

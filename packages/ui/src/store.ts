@@ -27,7 +27,9 @@
 
 import {
   FrontierSuggestionProvider,
+  Mind,
   graph as engine,
+  type ProposedLink,
   type Capture,
   type Edge,
   type InboundChange,
@@ -45,6 +47,19 @@ import { create } from "zustand";
 
 const provider = new FrontierSuggestionProvider();
 
+/**
+ * One Mind for the app. Module-level rather than in state because it holds a
+ * result cache that must survive re-renders, and because swapping the provider
+ * is a settings action, not a render.
+ *
+ * With no model configured this is `LocalMind` alone: `connect`, `distil` and
+ * `next` work offline, and nothing leaves the device.
+ */
+export const mind = new Mind();
+
+/** Connections are advisory and scan the whole map — never on the hot path. */
+const CONNECTION_DEBOUNCE_MS = 400;
+
 /** Long enough to coalesce a burst of edits, short enough to feel immediate. */
 const PROPOSAL_DEBOUNCE_MS = 120;
 
@@ -59,6 +74,8 @@ interface AbhState {
   profile: Profile | null;
   statuses: Map<string, MapStatus>;
   proposals: ProposedTopic[];
+  /** Links the Mind thinks should exist. Advisory, debounced, never blocking. */
+  connections: ProposedLink[];
   /** Null until a sync engine is attached. */
   sync: SyncSnapshotState | null;
 
@@ -79,6 +96,10 @@ interface AbhState {
   explore: (input: { title: string; why?: string; domain?: string; parentId?: string }) => Promise<string>;
   acceptProposal: (p: ProposedTopic) => Promise<void>;
   addCapture: (input: { kind: Capture["kind"]; title?: string; url?: string; text?: string }) => Promise<void>;
+  /** Accept one proposed link. Handles all three kinds; safe to call twice. */
+  acceptLink: (link: ProposedLink) => Promise<void>;
+  /** Dismiss it for this session. Deliberately not persisted — see the impl. */
+  dismissLink: (link: ProposedLink) => void;
 }
 
 /** Replace a record by id, or append it. Returns a new array (Zustand needs one). */
@@ -91,6 +112,23 @@ function upsert<T extends { id: string }>(list: readonly T[], rec: T): T[] {
 }
 
 let proposalTimer: ReturnType<typeof setTimeout> | null = null;
+let connectionTimer: ReturnType<typeof setTimeout> | null = null;
+
+/**
+ * Links waved away, for this session only.
+ *
+ * Not persisted, and that's the design. A dismissal here means "not that one,
+ * not now" — the map changes constantly, and a link that was wrong when you had
+ * four notes may be exactly right at forty. Writing these to storage would also
+ * mean syncing them, so a shrug on your phone would permanently silence a
+ * suggestion on your laptop. The cost of being wrong is one extra glance.
+ */
+const dismissed = new Set<string>();
+
+/** Identity of a proposal, independent of the wording or score attached to it. */
+function linkKey(l: ProposedLink): string {
+  return `${l.kind}:${l.fromId}:${l.toId}:${l.draft?.title ?? ""}`;
+}
 
 export const useAbh = create<AbhState>((set, get) => {
   /**
@@ -101,6 +139,7 @@ export const useAbh = create<AbhState>((set, get) => {
   function commitGraph(topics: Topic[], edges: Edge[]): void {
     set({ topics, edges, statuses: engine.computeStatuses({ topics, edges }) });
     scheduleProposals();
+    scheduleConnections();
   }
 
   /** Advisory data — worth being slightly stale, never worth a dropped frame. */
@@ -115,6 +154,29 @@ export const useAbh = create<AbhState>((set, get) => {
         () => {}, // a failed suggestion is not worth surfacing
       );
     }, PROPOSAL_DEBOUNCE_MS);
+  }
+
+  /**
+   * Ask the Mind what should be connected to what.
+   *
+   * Debounced harder than proposals because it reads every topic, every edge
+   * and every capture. The `Mind` cache means an unchanged map costs nothing
+   * here, but the point of the debounce is the *changed* case: typing a note
+   * shouldn't rescan the whole second brain on every keystroke.
+   *
+   * Dismissed links are filtered out on arrival rather than at render, so the
+   * one a user just waved away can't reappear when the list recomputes.
+   */
+  function scheduleConnections(): void {
+    if (connectionTimer) clearTimeout(connectionTimer);
+    connectionTimer = setTimeout(() => {
+      connectionTimer = null;
+      const { topics, edges, captures } = get();
+      void mind.connect({ graph: { topics, edges }, captures, limit: 6 }).then(
+        (links) => set({ connections: links.filter((l) => !dismissed.has(linkKey(l))) }),
+        () => {},
+      );
+    }, CONNECTION_DEBOUNCE_MS);
   }
 
   /** Reload only the collections a change actually touched. */
@@ -148,6 +210,7 @@ export const useAbh = create<AbhState>((set, get) => {
     profile: null,
     statuses: new Map(),
     proposals: [],
+    connections: [],
     sync: null,
 
     async init(store) {
@@ -256,6 +319,59 @@ export const useAbh = create<AbhState>((set, get) => {
     async addCapture(input) {
       const capture = await get().store!.addCapture(input);
       set({ captures: upsert(get().captures, capture) });
+      // A new capture is the single most likely thing to connect to something.
+      scheduleConnections();
+    },
+
+    /**
+     * Accept a proposed link.
+     *
+     * The three kinds do genuinely different things, and collapsing them would
+     * lose the distinction that makes `distil` worth having: `capture-topic`
+     * files a note against a node that already exists, while `capture-newtopic`
+     * mints one. Getting that wrong in either direction is how a second brain
+     * fills with near-duplicates.
+     *
+     * Optimistically removed from the list first — accepting is the confident
+     * action, and watching a row linger after you tap it reads as a bug.
+     */
+    async acceptLink(link) {
+      dismissed.add(linkKey(link));
+      set({ connections: get().connections.filter((l) => linkKey(l) !== linkKey(link)) });
+      const store = get().store!;
+
+      if (link.kind === "capture-topic") {
+        const capture = await store.linkCapture(link.fromId, link.toId);
+        if (capture) set({ captures: upsert(get().captures, capture) });
+        return;
+      }
+
+      if (link.kind === "capture-newtopic" && link.draft) {
+        const topicId = await get().explore({
+          title: link.draft.title,
+          why: link.draft.why,
+          domain: link.draft.domain,
+        });
+        const capture = await store.linkCapture(link.fromId, topicId);
+        if (capture) set({ captures: upsert(get().captures, capture) });
+        return;
+      }
+
+      if (link.kind === "topic-topic") {
+        // Soft, not hard. This is a resemblance the app noticed, not a
+        // prerequisite the user asserted, and a wrong hard edge would lock a
+        // topic the learner could actually have started today.
+        const edge = await store.addEdge(link.fromId, link.toId, {
+          strength: "soft",
+          origin: "ai",
+        });
+        commitGraph(get().topics, upsert(get().edges, edge));
+      }
+    },
+
+    dismissLink(link) {
+      dismissed.add(linkKey(link));
+      set({ connections: get().connections.filter((l) => linkKey(l) !== linkKey(link)) });
     },
   };
 });
