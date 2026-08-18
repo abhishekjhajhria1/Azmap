@@ -17,6 +17,7 @@ library;
 
 import 'package:flutter/widgets.dart';
 
+import '../content/library.dart';
 import '../data/map_repository.dart';
 import '../domain/graph.dart';
 import '../domain/models.dart';
@@ -78,6 +79,17 @@ class MapController extends ChangeNotifier {
   void _recomputeStatuses() => _statuses = computeStatuses(graph);
 
   // ---- mutations -----------------------------------------------------------
+
+  /// Start a roadmap, then reload — inflating 60 chapters writes far more than
+  /// a patch can sensibly track, and this happens once per roadmap rather than
+  /// once per interaction.
+  int startRoadmap(RoadmapDef def) {
+    final added = _repo.startRoadmap(def);
+    if (added > 0) _reload();
+    return added;
+  }
+
+  Set<String> get startedRoadmaps => _repo.startedRoadmaps();
 
   Topic addTopic(String title) {
     final t = _repo.addTopic(title: title);

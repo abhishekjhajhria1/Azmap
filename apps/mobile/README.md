@@ -23,7 +23,35 @@ at all, not a sign something is conceptually wrong.
 | `lib/spaces/` | Brain, Roadmap, Capture, People |
 | `test/` | Conformance corpus, `LocalMind`, preferences |
 
-**Not done yet:** the share-sheet capture target and the guide reader.
+**Not done yet:** widgets, notifications, and the Guardian (which needs
+account-to-account sharing the relay doesn't do yet).
+
+## Content comes from core, not from Dart
+
+The biggest gap found this pass: the mobile app had **zero roadmap content**.
+"The Roadmap" is the product's first pillar and on the phone it was an empty
+notebook, while the web app shipped 10 roadmaps, 305 nodes and both exam guides.
+
+Fixed the same way the engine was, and for the opposite reason. The engine had
+to be *ported* — logic in a JSON file is an interpreter waiting to be written.
+Content is data, and data has one home:
+
+```sh
+pnpm --filter @abh/core content   # → apps/mobile/assets/content.json
+```
+
+Hand-translating 305 topic seeds into Dart would guarantee the phone and the
+web app disagree about a syllabus within a month, and nobody would notice until
+a student revised the wrong chapter.
+
+Starting a roadmap inflates it into the one graph under namespaced ids — a
+roadmap is a *view*, not a separate store, which is what lets a capture about
+kinematics connect to a JEE node. It runs in one transaction, because a
+half-inflated roadmap is a path with missing prerequisites, and the unlock
+engine would read that as "everything is available" — quietly destroying the
+ordering that is the entire point. Idempotent too: people tap things twice, and
+a map that grows a second copy of a 60-chapter syllabus is unrecoverable by
+hand.
 
 ## Four things that were broken, found by audit
 

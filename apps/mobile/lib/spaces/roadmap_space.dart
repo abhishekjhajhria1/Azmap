@@ -13,6 +13,9 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../design/survey.dart';
+import '../content/guide_sheet.dart';
+import '../content/library.dart';
+import '../content/roadmap_picker.dart';
 import '../design/controls.dart';
 import '../design/layout.dart';
 import '../design/tokens.dart';
@@ -21,11 +24,81 @@ import '../domain/models.dart';
 import '../prefs/preferences.dart';
 import '../state/map_controller.dart';
 
-class RoadmapSpace extends StatelessWidget {
+class RoadmapSpace extends StatefulWidget {
   const RoadmapSpace({super.key, required this.onCelebrate});
 
   /// Called with whatever a completion opened up, so the shell can celebrate.
   final ValueChanged<List<Topic>> onCelebrate;
+
+  @override
+  State<RoadmapSpace> createState() => _RoadmapSpaceState();
+}
+
+class _RoadmapSpaceState extends State<RoadmapSpace> {
+  /// Loaded once, lazily. A 70KB parse is nothing, but doing it during startup
+  /// delays the first frame for a screen many launches never reach.
+  late final Future<ContentLibrary> _library = ContentLibrary.load();
+
+  bool _picking = false;
+  Guide? _guide;
+
+  @override
+  Widget build(BuildContext context) {
+    final map = MapScope.of(context);
+
+    // The picker is the whole screen when there is nothing to show, and
+    // reachable by choice when there is. An empty roadmap screen that only
+    // says "nothing here" and offers no way out is a dead end, and dead ends
+    // on the first screen are why people uninstall.
+    if (_picking || map.topics.isEmpty) {
+      return FutureBuilder<ContentLibrary>(
+        future: _library,
+        builder: (context, snapshot) {
+          final library = snapshot.data;
+          if (library == null) return const SizedBox.shrink();
+          return RoadmapPicker(
+            library: library,
+            onStarted: (_) => setState(() => _picking = false),
+          );
+        },
+      );
+    }
+
+    final guide = _guide;
+    if (guide != null) {
+      return GuideSheet(guide: guide, onClose: () => setState(() => _guide = null));
+    }
+
+    return _Path(
+      onCelebrate: widget.onCelebrate,
+      onBrowse: () => setState(() => _picking = true),
+      onOpenGuide: () async {
+        final library = await _library;
+        // The guide belongs to whichever roadmap this map came from. One
+        // started roadmap is overwhelmingly the common case; when there are
+        // several, the first with a guide is a better answer than none.
+        for (final id in MapScope.of(context).startedRoadmaps) {
+          final found = library.guide(library.roadmap(id)?.guideId);
+          if (found != null) {
+            if (mounted) setState(() => _guide = found);
+            return;
+          }
+        }
+      },
+    );
+  }
+}
+
+class _Path extends StatelessWidget {
+  const _Path({
+    required this.onCelebrate,
+    required this.onBrowse,
+    required this.onOpenGuide,
+  });
+
+  final ValueChanged<List<Topic>> onCelebrate;
+  final VoidCallback onBrowse;
+  final VoidCallback onOpenGuide;
 
   @override
   Widget build(BuildContext context) {
@@ -35,21 +108,40 @@ class RoadmapSpace extends StatelessWidget {
     final map = MapScope.of(context);
     final open = map.availableNow;
 
-    if (map.topics.isEmpty) {
-      return const _Empty(
-        title: 'Nothing on your map yet.',
-        body: 'Add something you want to learn, and the path builds itself as '
-            'you go.',
-      );
-    }
-
     final next = open.isEmpty ? null : open.first;
     final index = GraphIndex(map.graph);
 
     return ListView(
       padding: EdgeInsets.symmetric(horizontal: m.pagePadH),
       children: [
-        Text('ROADMAP', style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
+        Row(
+          children: [
+            Expanded(
+              child: Text('ROADMAP',
+                  style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
+            ),
+            GestureDetector(
+              onTap: onOpenGuide,
+              child: Container(
+                height: Metrics.tapTarget,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(left: 12),
+                child: Text('Guide',
+                    style: AbhText.foot.copyWith(color: c.accent)),
+              ),
+            ),
+            GestureDetector(
+              onTap: onBrowse,
+              child: Container(
+                height: Metrics.tapTarget,
+                alignment: Alignment.centerRight,
+                padding: const EdgeInsets.only(left: 16),
+                child: Text('Browse',
+                    style: AbhText.foot.copyWith(color: c.accent)),
+              ),
+            ),
+          ],
+        ),
         const SizedBox(height: 10),
 
         if (next == null) ...[
@@ -325,25 +417,3 @@ class _UnlockHint extends StatelessWidget {
   }
 }
 
-class _Empty extends StatelessWidget {
-  const _Empty({required this.title, required this.body});
-  final String title;
-  final String body;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = AbhTheme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title, style: AbhText.title1.copyWith(color: c.fg)),
-          const SizedBox(height: 10),
-          Text(body, style: AbhText.body.copyWith(color: c.fgMuted)),
-        ],
-      ),
-    );
-  }
-}

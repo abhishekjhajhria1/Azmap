@@ -25,7 +25,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "vectors": "tsx scripts/emit-vectors.ts"
+    "vectors": "tsx scripts/emit-vectors.ts",
+    "content": "tsx scripts/emit-content.ts"
   },
   "dependencies": {
     "idb": "^8.0.0",

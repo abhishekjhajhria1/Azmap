@@ -16,6 +16,7 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
+import 'capture/share_target.dart';
 import 'data/database.dart';
 import 'data/device_id.dart';
 import 'data/map_repository.dart';
@@ -190,6 +191,9 @@ class _Shell extends StatefulWidget {
 }
 
 class _ShellState extends State<_Shell> {
+  ShareTarget? _share;
+  String? _toast;
+  Timer? _toastTimer;
   Space? _space;
   List<Topic> _celebrating = const [];
   bool _settingsOpen = false;
@@ -210,6 +214,41 @@ class _ShellState extends State<_Shell> {
         HomeSpace.roadmap => Space.roadmap,
         HomeSpace.capture => Space.capture,
       };
+
+  /// Not `initState`: reading an InheritedWidget there is illegal —
+  /// `dependOnInheritedWidgetOfExactType` needs a mounted element and Flutter
+  /// asserts on it. This is the first callback where MapScope is readable.
+  ///
+  /// Started here rather than in `main()` because a share arriving before the
+  /// UI exists has nowhere to be acknowledged, and the acknowledgement is what
+  /// makes the round trip feel finished.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_share != null) return;
+    final target = ShareTarget(map: MapScope.of(context), onCaptured: _toastSaved);
+    _share = target;
+    unawaited(target.start());
+  }
+
+  void _toastSaved(int count) {
+    HapticFeedback.selectionClick();
+    _toastTimer?.cancel();
+    setState(() => _toast =
+        count == 1 ? 'Saved to your map' : 'Saved $count things to your map');
+    _toastTimer = Timer(const Duration(milliseconds: 2200), () {
+      // Guarded: the timer outlives the widget if you leave the screen inside
+      // two seconds, and setState after dispose throws.
+      if (mounted) setState(() => _toast = null);
+    });
+  }
+
+  @override
+  void dispose() {
+    _toastTimer?.cancel();
+    _share?.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -310,6 +349,28 @@ class _ShellState extends State<_Shell> {
             ),
           ),
         ),
+
+        // Confirmation for things that arrived from outside the app. Anchored
+        // above the dock so it never covers navigation, and never blocking —
+        // it is a receipt, not a decision.
+        if (_toast != null)
+          Positioned(
+            left: Radii.floatInset,
+            right: Radii.floatInset,
+            bottom: atTop ? safe.bottom + Radii.floatInset : clearance,
+            child: IgnorePointer(
+              child: Center(
+                child: GlassPanel(
+                  radius: Radii.pill,
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                  child: Text(_toast!,
+                      style: AbhText.foot
+                          .copyWith(color: AbhTheme.of(context).fg)),
+                ),
+              ),
+            ),
+          ),
 
         if (_celebrating.isNotEmpty)
           Positioned.fill(

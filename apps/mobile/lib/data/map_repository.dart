@@ -17,6 +17,7 @@ import 'dart:convert';
 import 'package:sqlite3/sqlite3.dart';
 import 'package:uuid/uuid.dart';
 
+import '../content/library.dart';
 import '../domain/graph.dart';
 import '../domain/models.dart';
 import '../domain/merge.dart';
@@ -124,6 +125,78 @@ class MapRepository {
     );
     _putEdge(e);
     return e;
+  }
+
+  // ---- roadmaps ------------------------------------------------------------
+
+  /// Inflate a roadmap into the one graph.
+  ///
+  /// A roadmap is a *view*, not a separate store: its topics become real nodes
+  /// under namespaced ids, so the second brain holds everything and the runner
+  /// shows one slice. That is what lets a capture about kinematics connect to a
+  /// JEE syllabus node without either knowing about the other.
+  ///
+  /// **Idempotent.** Re-starting a roadmap you already have must not duplicate
+  /// 60 chapters — people tap these twice, and a map that grows a second copy
+  /// of the whole syllabus is unrecoverable by hand.
+  ///
+  /// Runs in one transaction: a half-inflated roadmap is a path with missing
+  /// prerequisites, which the unlock engine would read as "everything is
+  /// available", quietly destroying the ordering that is the entire point.
+  int startRoadmap(RoadmapDef def) {
+    final existing = {for (final t in topics()) t.id};
+    var added = 0;
+
+    _c.execute('BEGIN');
+    try {
+      for (final seed in [...def.path, ...def.branches]) {
+        final id = roadmapNodeId(def.id, seed.id);
+        if (existing.contains(id)) continue;
+
+        _putTopic(
+          Topic(
+            id: id,
+            title: seed.title,
+            whyItMatters: seed.why,
+            progress: progressFromWire(seed.progress),
+            origin: Origin.roadmap,
+            // Tagged with the roadmap id so the runner can filter without a
+            // join table, and with the domain for colour on the map.
+            tags: [def.id, if (seed.domain.isNotEmpty) seed.domain],
+            createdAt: _now,
+            updatedAt: _now,
+            deviceId: deviceId,
+          ),
+        );
+        added++;
+
+        for (final need in seed.needs) {
+          final from = roadmapNodeId(def.id, need);
+          _putEdge(Edge(
+            id: '${def.id}__${need}__${seed.id}',
+            from: from,
+            to: id,
+            createdAt: _now,
+            updatedAt: _now,
+            deviceId: deviceId,
+          ));
+        }
+      }
+      _c.execute('COMMIT');
+    } catch (_) {
+      _c.execute('ROLLBACK');
+      rethrow;
+    }
+    return added;
+  }
+
+  /// Which roadmaps have been started, by id.
+  Set<String> startedRoadmaps() {
+    final out = <String>{};
+    for (final t in topics()) {
+      if (t.origin == Origin.roadmap && t.tags.isNotEmpty) out.add(t.tags.first);
+    }
+    return out;
   }
 
   // ---- captures ------------------------------------------------------------
