@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The launcher icon, as vectors rather than a PNG set.
+     
+     Two reasons this is XML: a repo written without an image editor cannot
+     produce five density buckets of PNG, and a vector is the honest starting
+     point anyway — it scales to every bucket and weighs nothing.
+     
+     The mark is the map: three nodes and the edges between them, which is what
+     ABH actually is. Not a letter A, and not a book.
+     
+     Replace before store submission with a proper adaptive icon
+     (mipmap-anydpi-v26 plus PNG fallbacks) — Play's listing surfaces want
+     raster at fixed sizes, and this is a launcher icon, not a store asset. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/abh_accent" />
+    <item android:top="22dp" android:bottom="22dp" android:left="22dp" android:right="22dp">
+        <vector
+            android:width="64dp"
+            android:height="64dp"
+            android:viewportWidth="64"
+            android:viewportHeight="64">
+            <!-- Edges first, so the nodes sit on top rather than being crossed
+                 out — the same rule the graph renderer follows. -->
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="4"
+                android:strokeAlpha="0.55"
+                android:strokeLineCap="round"
+                android:pathData="M16,20 L46,32" />
+            <path
+                android:strokeColor="#FFFFFF"
+                android:strokeWidth="4"
+                android:strokeAlpha="0.55"
+                android:strokeLineCap="round"
+                android:pathData="M46,32 L20,50" />
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M16,20 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M46,32 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+            <path
+                android:fillColor="#FFFFFF"
+                android:pathData="M20,50 m-7,0 a7,7 0 1,0 14,0 a7,7 0 1,0 -14,0" />
+        </vector>
+    </item>
+</layer-list>

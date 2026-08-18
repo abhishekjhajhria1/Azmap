@@ -1,0 +1,6 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Debug and profile builds only. Flutter's hot reload and DevTools talk
+         to the running app over a local socket, so these variants need the
+         permission and the release build must not have it. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+</manifest>

@@ -1,0 +1,35 @@
+// Flutter's Gradle plugin is loaded from the SDK rather than a Maven
+// coordinate, which is why this file looks unlike a normal Android project.
+// The path is read from local.properties (written by `flutter pub get`) and
+// falls back to FLUTTER_ROOT so CI without that file still builds.
+pluginManagement {
+    def flutterSdkPath = {
+        def properties = new Properties()
+        def localProperties = file("local.properties")
+        if (localProperties.exists()) {
+            localProperties.withInputStream { properties.load(it) }
+        }
+        def sdkPath = properties.getProperty("flutter.sdk") ?: System.getenv("FLUTTER_ROOT")
+        assert sdkPath != null : "flutter.sdk not set in local.properties and FLUTTER_ROOT is unset. Run `flutter pub get` in apps/mobile."
+        return sdkPath
+    }()
+
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
+
+    repositories {
+        google()
+        mavenCentral()
+        gradlePluginPortal()
+    }
+}
+
+plugins {
+    id "dev.flutter.flutter-plugin-loader" version "1.0.0"
+    // Pinned rather than floating: an AGP or Kotlin bump arriving on its own
+    // is the classic "it built yesterday" failure, and it always lands on
+    // whoever is trying to ship.
+    id "com.android.application" version "8.7.3" apply false
+    id "org.jetbrains.kotlin.android" version "2.1.0" apply false
+}
+
+include ":app"

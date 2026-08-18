@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copied exactly from packages/ui/theme.css. #fbfbfd is not #fcfcfc: the
+     whole design rests on small separations between planes, and a launch
+     screen that is "close enough" produces a visible step at first frame. -->
+<resources>
+    <color name="abh_bg">#FBFBFD</color>
+    <color name="abh_bg_dark">#08080A</color>
+    <color name="abh_accent">#0071E3</color>
+</resources>

@@ -1,0 +1,66 @@
+plugins {
+    id "com.android.application"
+    id "kotlin-android"
+    // Must come after the Android and Kotlin plugins — Flutter's plugin reads
+    // their configuration, and loading it first fails with an error that
+    // points nowhere near the real cause.
+    id "dev.flutter.flutter-gradle-plugin"
+}
+
+def localProperties = new Properties()
+def localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localPropertiesFile.withReader("UTF-8") { localProperties.load(it) }
+}
+
+android {
+    namespace = "sh.abh.app"
+    compileSdk = 35
+    ndkVersion = flutter.ndkVersion
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+
+    defaultConfig {
+        applicationId = "sh.abh.app"
+
+        // 23, not Flutter's default 21. `sqlite3_flutter_libs` wants 23+, and
+        // below it the bundled SQLite has to be loaded differently — a whole
+        // branch of complexity to serve a fraction of a percent of devices
+        // that will not be running a study app in 2026 anyway.
+        minSdk = 23
+        targetSdk = 35
+
+        versionCode = flutter.versionCode
+        versionName = flutter.versionName
+    }
+
+    buildTypes {
+        release {
+            // Debug signing so `flutter run --release` works out of the box.
+            // Replace before shipping: see android/README.md for the keystore
+            // steps. Left deliberately obvious rather than silently correct,
+            // because a release build accidentally signed with a debug key is
+            // rejected by Play at the worst possible moment.
+            signingConfig = signingConfigs.debug
+
+            // Off, and not an oversight. R8 strips classes that Flutter
+            // plugins reach by reflection, and the failures show up only in
+            // release builds as missing platform channels. Turn it on
+            // deliberately, with the plugin ProGuard rules, once there is a
+            // real device to test the release build on.
+            minifyEnabled = false
+            shrinkResources = false
+        }
+    }
+}
+
+flutter {
+    source = "../.."
+}

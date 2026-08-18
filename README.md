@@ -21,13 +21,17 @@ This repo is the multi-surface home for that idea.
 
 | Path | What it is | Status |
 | --- | --- | --- |
-| [`packages/core`](packages/core) | `@abh/core` — the shared brain: domain model, unlock/reveal engine, roadmaps, suggestions, local-first storage + sync seams. Every surface reuses it. | ✅ built, 35 tests |
+| [`packages/core`](packages/core) | `@abh/core` — the shared brain: domain model, unlock/reveal engine, roadmaps, suggestions, local-first storage + sync seams, the E2E-encrypted sync engine, and the Mind (AI) seam. Every surface reuses it. | ✅ built, 294 tests |
 | [`packages/ui`](packages/ui) | `@abh/ui` — design system: theme, adaptive shell (bottom-nav↔rail↔sidebar), the WebGL `GraphView` (Sigma + graphology, worker layout), and the reactive `useAbh` store. | ✅ built |
 | [`apps/app`](apps/app) | **The product** — a local-first, offline PWA (Vite + React). One map, distinct spaces: second brain, focused roadmaps, ask-anything, capture. Runs on the real store. | ✅ built |
 | [`apps/website`](apps/website) | Marketing site (Next.js). Landing page + live-demo hero. | ✅ built |
 | [`apps/extension`](apps/extension) | Browser extension (WXT, MV3). Capture what you read, straight into the map. | ✅ built |
-| [`apps/mobile`](apps/mobile) | Flutter — one codebase for iOS + Android, adaptive for phone/foldable/tablet/iPad. Mirrors `apps/app`. | 🔜 planned |
+| [`apps/server`](apps/server) | The sync relay: an append-only log of sealed blobs it cannot read. Dockerfile + fly.toml. | ✅ built, 27 tests |
+| [`apps/mobile`](apps/mobile) | Flutter — one codebase for iOS + Android, adaptive for phone/foldable/tablet/iPad. Android and iOS project folders included. | ⚠️ written, never compiled — no Flutter SDK was available |
 | [`apps/desktop`](apps/desktop) | All-OS desktop app (Tauri wraps `apps/app`). | 🔜 planned |
+
+Why this exists, how it is built, and every UX decision with its reasoning:
+[`docs/WHY.md`](docs/WHY.md) — **read this first**.
 
 Architecture and the reasoning behind "one shared model, distinct experiences":
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -38,7 +42,7 @@ Requires **Node ≥ 20** and **pnpm 10**.
 
 ```bash
 pnpm install                       # install the whole workspace
-pnpm --filter @abh/core test       # run the domain engine tests (35)
+pnpm -r test                       # 331 tests across core, ui and the relay
 pnpm -r build                      # build core, ui, and every app
 ```
 
