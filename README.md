@@ -33,6 +33,9 @@ This repo is the multi-surface home for that idea.
 Why this exists, how it is built, and every UX decision with its reasoning:
 [`docs/WHY.md`](docs/WHY.md) — **read this first**.
 
+Brief for the in-progress UI/UX redesign, including hard constraints a
+redesign must not violate: [`docs/DESIGN-BRIEF.md`](docs/DESIGN-BRIEF.md).
+
 Architecture and the reasoning behind "one shared model, distinct experiences":
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
