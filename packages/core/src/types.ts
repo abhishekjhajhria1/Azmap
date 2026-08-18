@@ -75,8 +75,10 @@ export const Topic = z.object({
   completedAt: z.number().int().optional(),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
-  /** Monotonic revision counter for conflict-free-ish sync later. */
+  /** Monotonic revision counter; see sync/merge.ts for the ordering rule. */
   rev: z.number().int().nonnegative().default(0),
+  /** Which device last wrote this — the deterministic merge tiebreak. */
+  deviceId: z.string().default(""),
 });
 export type Topic = z.infer<typeof Topic>;
 
@@ -92,7 +94,9 @@ export const Edge = z.object({
   strength: z.enum(["hard", "soft"]).default("hard"),
   origin: TopicOrigin.default("user"),
   createdAt: z.number().int(),
+  updatedAt: z.number().int().default(0),
   rev: z.number().int().nonnegative().default(0),
+  deviceId: z.string().default(""),
 });
 export type Edge = z.infer<typeof Edge>;
 
@@ -110,6 +114,7 @@ export const Roadmap = z.object({
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
   rev: z.number().int().nonnegative().default(0),
+  deviceId: z.string().default(""),
 });
 export type Roadmap = z.infer<typeof Roadmap>;
 
@@ -126,6 +131,9 @@ export const Suggestion = z.object({
   rationale: z.string().default(""),
   status: z.enum(["pending", "accepted", "rejected"]).default("pending"),
   createdAt: z.number().int(),
+  updatedAt: z.number().int().default(0),
+  rev: z.number().int().nonnegative().default(0),
+  deviceId: z.string().default(""),
 });
 export type Suggestion = z.infer<typeof Suggestion>;
 
@@ -141,6 +149,9 @@ export const Guardian = z.object({
   canSignOff: z.boolean().default(true),
   notifyOnSlip: z.boolean().default(true),
   createdAt: z.number().int(),
+  updatedAt: z.number().int().default(0),
+  rev: z.number().int().nonnegative().default(0),
+  deviceId: z.string().default(""),
 });
 export type Guardian = z.infer<typeof Guardian>;
 
@@ -157,6 +168,9 @@ export const Capture = z.object({
   /** Topic ids this capture has been linked to, once connected. */
   linkedTopicIds: z.array(z.string()).default([]),
   createdAt: z.number().int(),
+  updatedAt: z.number().int().default(0),
+  rev: z.number().int().nonnegative().default(0),
+  deviceId: z.string().default(""),
 });
 export type Capture = z.infer<typeof Capture>;
 
@@ -181,21 +195,64 @@ export const Profile = z.object({
    * streak you can never recover causes abandonment, not motivation.
    */
   streakFreezes: z.number().int().nonnegative().default(2),
+  /**
+   * Where the floating nav dock sits. "auto" resolves per device — bottom on
+   * phones (thumb reach), top on larger screens.
+   */
+  dockPosition: z.enum(["auto", "top", "bottom"]).default("auto"),
+  /**
+   * Which navigation the app wears on screens big enough to choose. A rail
+   * gives a working document room to breathe and keeps context (active
+   * roadmap, recent captures) permanently in view; the dock keeps the canvas
+   * whole. Phones and folds always get the dock regardless — a rail on a
+   * 390px screen is just a wall.
+   */
+  navLayout: z.enum(["sidebar", "dock"]).default("sidebar"),
   createdAt: z.number().int(),
   updatedAt: z.number().int(),
   rev: z.number().int().nonnegative().default(0),
 });
 export type Profile = z.infer<typeof Profile>;
 
+/** Which collection a record lives in — used by tombstones and deltas. */
+export const Collection = z.enum([
+  "topics",
+  "edges",
+  "roadmaps",
+  "suggestions",
+  "guardians",
+  "captures",
+]);
+export type Collection = z.infer<typeof Collection>;
+
+/**
+ * A record of a deletion.
+ *
+ * Without these, a delete is invisible to a peer: merging a snapshot that still
+ * contains the record silently resurrects it. A tombstone makes "this was
+ * deleted" a fact that can be merged and ordered like any other write.
+ */
+export const Tombstone = z.object({
+  id: z.string(),
+  collection: Collection,
+  deletedAt: z.number().int(),
+  rev: z.number().int().nonnegative().default(0),
+  deviceId: z.string().default(""),
+});
+export type Tombstone = z.infer<typeof Tombstone>;
+
 /** The entire on-device dataset — the unit an export/import/sync moves. */
 export const MapSnapshot = z.object({
-  version: z.literal(1),
+  /** 2 added tombstones + rev/updatedAt/deviceId on every record. */
+  version: z.literal(2),
   topics: z.array(Topic),
   edges: z.array(Edge),
   roadmaps: z.array(Roadmap),
   suggestions: z.array(Suggestion),
   guardians: z.array(Guardian),
   captures: z.array(Capture),
+  /** Deletions, applied after upserts so a delete always beats a stale copy. */
+  deletions: z.array(Tombstone).default([]),
   profile: Profile.nullable().default(null),
   exportedAt: z.number().int(),
 });

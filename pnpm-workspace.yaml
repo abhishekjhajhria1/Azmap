@@ -3,5 +3,6 @@ packages:
   - "apps/app"
   - "apps/website"
   - "apps/extension"
+  - "apps/server"
   # apps/mobile (Flutter) and apps/desktop are managed by their own toolchains,
   # not the pnpm workspace.

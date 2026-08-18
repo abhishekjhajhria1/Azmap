@@ -1,4 +1,6 @@
 @import "@abh/ui/theme.css";
+@import "@fontsource-variable/inter";
+@import "@fontsource-variable/fraunces";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,9 +10,25 @@ html {
 }
 
 body {
+  font-family: var(--font-ui);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.011em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
   background: var(--bg);
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
+}
+
+/* Marketing headings carry the display face at the page's own sizes. */
+.t-serif {
+  font-family: var(--font-display);
+  font-variation-settings: "SOFT" 20, "WONK" 1, "opsz" 96;
+  font-feature-settings: "ss01";
+  font-weight: 620;
 }
 
 /* Subtle grid texture used behind the hero — tuned per theme via tokens. */

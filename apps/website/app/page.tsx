@@ -6,8 +6,8 @@ export default function Home() {
   return (
     <main className="overflow-x-hidden">
       {/* ---- Nav ---- */}
-      <header className="sticky top-0 z-50 border-b border-hairline bg-[var(--glass-bg)] [backdrop-filter:saturate(180%)_blur(20px)] [-webkit-backdrop-filter:saturate(180%)_blur(20px)]">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-4 sm:px-8">
+      <header className="sticky top-4 z-50 mx-auto w-[min(72rem,calc(100%-2rem))] rounded-[var(--r-pill)] border border-[var(--glass-border)] bg-[var(--glass-bg)] shadow-[var(--e3)] [backdrop-filter:saturate(180%)_blur(24px)] [-webkit-backdrop-filter:saturate(180%)_blur(24px)]">
+        <div className="mx-auto flex w-full items-center justify-between py-2.5 pl-4 pr-2.5 sm:pl-6 sm:pr-3">
           <a href="#" className="flex items-center gap-2 font-bold tracking-tight">
             <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-accent-ink">
               A
@@ -40,10 +40,10 @@ export default function Home() {
           <div className="grid items-center gap-12 lg:grid-cols-2">
             <div className="animate-fade-up">
               <Eyebrow>The learning map</Eyebrow>
-              <h1 className="text-balance text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl lg:text-6xl">
+              <h1 className="t-serif text-balance text-[40px] leading-[1.02] tracking-[-0.026em] sm:text-[52px] lg:text-[62px]">
                 Everything you learn, on one map that grows with you.
               </h1>
-              <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
+              <p className="mt-6 max-w-xl text-[17px] leading-relaxed text-muted">
                 Name anything you want to learn and get a real path through it —
                 or let AI build one for a subject nobody has mapped yet. Every
                 step you finish opens the next. And the people who matter can see
@@ -58,7 +58,7 @@ export default function Home() {
                 </a>
                 <a
                   href="#product"
-                  className="rounded-lg border border-hairline px-6 py-3 font-semibold text-fg transition hover:bg-surface-2"
+                  className="rounded-full bg-surface-2 px-6 py-3 font-semibold text-fg shadow-[var(--e1)] transition hover:-translate-y-0.5 hover:shadow-[var(--e2)]"
                 >
                   See how it works
                 </a>
@@ -80,7 +80,7 @@ export default function Home() {
       <Section id="problem" className="py-20">
         <div className="mx-auto max-w-3xl text-center">
           <Eyebrow>The problem</Eyebrow>
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             You learn constantly and keep almost none of it.
           </h2>
           <p className="mt-6 text-lg leading-relaxed text-muted">
@@ -97,7 +97,7 @@ export default function Home() {
             ["Note apps", "capture everything and organise nothing."],
             ["Roadmap sites", "show a beautiful path, then forget you the moment you close the tab."],
           ].map(([h, p]) => (
-            <div key={h} className="rounded-xl border border-hairline bg-surface p-5">
+            <div key={h} className="rounded-[18px] bg-surface p-5 shadow-[var(--e1)]">
               <div className="font-semibold text-fg">{h}</div>
               <div className="mt-2 text-sm leading-relaxed text-muted">{p}</div>
             </div>
@@ -113,7 +113,7 @@ export default function Home() {
       <Section id="product" className="py-20">
         <div className="max-w-2xl">
           <Eyebrow>The product</Eyebrow>
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             Three things that only work because they&apos;re the same thing.
           </h2>
         </div>
@@ -134,7 +134,7 @@ export default function Home() {
             you have actually come.
           </Pillar>
         </div>
-        <div className="mt-8 rounded-xl border border-accent bg-accent/5 p-5 text-center text-sm text-accent">
+        <div className="mt-8 rounded-[18px] bg-accent/[0.07] p-5 text-center text-sm text-accent">
           Nothing AI proposes joins your map until you tap to accept it.
         </div>
       </Section>
@@ -144,7 +144,7 @@ export default function Home() {
         <div className="grid items-center gap-12 lg:grid-cols-2">
           <div>
             <Eyebrow>Why the map is the point</Eyebrow>
-            <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+            <h2 className="t-serif text-balance text-3xl sm:text-4xl">
               Because the connections are real, the app can answer a question
               nothing else can.
             </h2>
@@ -161,7 +161,7 @@ export default function Home() {
               currently produces.
             </p>
           </div>
-          <div className="rounded-2xl border border-hairline bg-surface p-8">
+          <div className="rounded-[22px] bg-surface p-8 shadow-[var(--e2)]">
             <blockquote className="text-xl font-medium leading-relaxed text-fg">
               &ldquo;The prerequisite links are judgements about what genuinely
               blocks what. Scraping cannot produce them — and a wrong one is
@@ -178,7 +178,7 @@ export default function Home() {
       <Section id="who" className="py-20">
         <div className="max-w-2xl">
           <Eyebrow>Who it&apos;s for</Eyebrow>
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             Deliberately not one audience.
           </h2>
           <p className="mt-4 text-lg text-muted">
@@ -209,10 +209,10 @@ export default function Home() {
 
       {/* ---- Second brain / capture ---- */}
       <Section className="py-20">
-        <div className="rounded-3xl border border-hairline bg-gradient-to-br from-surface-2 to-bg p-8 sm:p-12">
+        <div className="rounded-[26px] bg-surface-2 p-8 shadow-[var(--e1)] sm:p-12">
           <div className="max-w-3xl">
             <Eyebrow>Where it&apos;s heading</Eyebrow>
-            <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+            <h2 className="t-serif text-balance text-3xl sm:text-4xl">
               A second brain that gets denser every time you learn something.
             </h2>
             <p className="mt-6 text-lg leading-relaxed text-muted">
@@ -246,7 +246,7 @@ export default function Home() {
       <Section id="why" className="py-20">
         <div className="max-w-2xl">
           <Eyebrow>Why this can work</Eyebrow>
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             The advantages are structural, not features.
           </h2>
         </div>
@@ -273,9 +273,9 @@ export default function Home() {
 
       {/* ---- Built so far ---- */}
       <Section className="py-20">
-        <div className="rounded-3xl border border-hairline bg-surface p-8 sm:p-12">
+        <div className="rounded-[26px] bg-surface p-8 shadow-[var(--e2)] sm:p-12">
           <Eyebrow>Built so far</Eyebrow>
-          <h2 className="max-w-2xl text-balance text-2xl font-bold sm:text-3xl">
+          <h2 className="t-serif max-w-2xl text-balance text-2xl sm:text-3xl">
             Not a mockup. A working app, built solo — now coming to every screen.
           </h2>
           <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -294,8 +294,8 @@ export default function Home() {
 
       {/* ---- CTA ---- */}
       <Section id="waitlist" className="py-20">
-        <div className="mx-auto max-w-2xl rounded-3xl border border-accent bg-gradient-to-b from-surface-2 to-bg p-10 text-center">
-          <h2 className="text-balance text-3xl font-bold sm:text-4xl">
+        <div className="mx-auto max-w-2xl rounded-[26px] bg-surface p-10 text-center shadow-[var(--e3)]">
+          <h2 className="t-serif text-balance text-3xl sm:text-4xl">
             Start the map you&apos;ll still be adding to in a year.
           </h2>
           <p className="mt-4 text-lg text-muted">
@@ -306,7 +306,7 @@ export default function Home() {
               type="email"
               required
               placeholder="you@email.com"
-              className="w-full rounded-lg border border-hairline bg-bg px-4 py-3 text-fg outline-none placeholder:text-subtle focus:border-accent"
+              className="w-full rounded-full bg-surface-2 px-5 py-3 text-fg outline-none ring-1 ring-transparent transition placeholder:text-subtle focus:ring-2 focus:ring-accent"
             />
             <button
               type="submit"

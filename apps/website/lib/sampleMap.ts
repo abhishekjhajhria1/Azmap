@@ -83,6 +83,7 @@ export function buildSampleTopics(): Topic[] {
     createdAt: ts,
     updatedAt: ts,
     rev: 0,
+    deviceId: "", // marketing sample — never stored, never synced
   }));
 }
 
@@ -97,7 +98,9 @@ export function buildSampleEdges(): Edge[] {
         strength: "hard",
         origin: "curated",
         createdAt: 0,
+        updatedAt: 0,
         rev: 0,
+        deviceId: "",
       });
     }
   }

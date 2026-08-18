@@ -52,12 +52,24 @@ interface Sim {
   degree: number;
 }
 
-const STATUS_RING: Record<MapStatus, string> = {
-  known: "#40916c",
-  in_progress: "#e9b949",
-  available: "#e9b949",
-  locked: "#274b39",
-};
+/**
+ * Ring colour per status, resolved from the live theme tokens rather than
+ * hardcoded. The previous values (`#40916c`, `#e9b949`, `#274b39`) were the
+ * retired forest-and-mustard palette, still painting the marketing hero long
+ * after the product had moved on.
+ */
+/** Apply an alpha to an opaque `#rrggbb`, without touching context state. */
+function withAlpha(color: string, alpha: number): string {
+  const m = /^#([0-9a-f]{6})$/i.exec(color.trim());
+  if (!m) return color;
+  const n = parseInt(m[1]!, 16);
+  const a = Math.max(0, Math.min(1, alpha));
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+}
+
+function statusRing(status: MapStatus, c: { known: string; available: string; locked: string }): string {
+  return status === "known" ? c.known : status === "locked" ? c.locked : c.available;
+}
 
 export default function GraphCanvas({
   topics,
@@ -89,10 +101,10 @@ export default function GraphCanvas({
   const { resolved } = useTheme();
   const readColors = () => {
     const c = readThemeColors();
-    const fg = typeof window !== "undefined"
-      ? getComputedStyle(document.documentElement).getPropertyValue("--fg").trim() || c.label
-      : c.label;
-    return { ...c, fg };
+    const cs = typeof window !== "undefined" ? getComputedStyle(document.documentElement) : null;
+    const fg = cs?.getPropertyValue("--fg").trim() || c.label;
+    const bg = cs?.getPropertyValue("--bg").trim() || "#ffffff";
+    return { ...c, fg, bg };
   };
   const themeRef = useRef(readColors());
   useEffect(() => { themeRef.current = readColors(); }, [resolved]);
@@ -288,6 +300,9 @@ export default function GraphCanvas({
       ctx.translate(view.tx, view.ty);
       ctx.scale(view.scale, view.scale);
 
+      // One read per frame, shared by edges and nodes.
+      const tc = themeRef.current;
+
       // Edges.
       ctx.lineWidth = 1.1 / view.scale;
       for (const e of edges) {
@@ -297,7 +312,6 @@ export default function GraphCanvas({
         const active = engine.computeStatuses; // noop ref to keep engine imported
         void active;
         const on = focus ? lit.has(e.from) && lit.has(e.to) : true;
-        const tc = themeRef.current;
         ctx.strokeStyle = on ? tc.edge : tc.muted;
         ctx.beginPath();
         ctx.moveTo(a.x, a.y);
@@ -314,10 +328,10 @@ export default function GraphCanvas({
         const status = statuses.get(t.id) ?? "locked";
         const r = radiusOf(nde);
         const dim = focus ? (lit.has(t.id) ? 1 : 0.18) : 1;
-        const base = colorOf?.(t) ?? "#74c69d";
+        const base = colorOf?.(t) ?? tc.available;
         const isGhost = ghosts.has(t.id);
         const fill = isGhost
-          ? "rgba(199,125,255,0.10)"
+          ? withAlpha(tc.ai, 0.1)
           : status === "locked"
             ? themeRef.current.locked
             : base;
@@ -334,11 +348,11 @@ export default function GraphCanvas({
           ctx.fill();
           ctx.setLineDash([4 / view.scale, 4 / view.scale]);
           ctx.lineWidth = 1.8 / view.scale;
-          ctx.strokeStyle = `rgba(199,125,255,${0.5 + pulse * 0.4})`;
+          ctx.strokeStyle = withAlpha(tc.ai, 0.5 + pulse * 0.4);
           ctx.stroke();
           ctx.setLineDash([]);
           // plus glyph
-          ctx.strokeStyle = "#c77dff";
+          ctx.strokeStyle = tc.ai;
           ctx.lineWidth = 2 / view.scale;
           ctx.beginPath();
           ctx.moveTo(nde.x - r * 0.4, nde.y);
@@ -348,14 +362,12 @@ export default function GraphCanvas({
           ctx.stroke();
           const showG = view.scale > 0.6 || lit.has(t.id) || !focus;
           if (showG) {
-            ctx.globalAlpha = dim * 0.8;
-            ctx.fillStyle = "#d8b6ff";
+            ctx.fillStyle = withAlpha(tc.ai, dim * 0.8);
             ctx.font = `12px ui-sans-serif, system-ui, sans-serif`;
             ctx.textAlign = "center";
             ctx.textBaseline = "top";
             ctx.fillText(t.title, nde.x, nde.y + r + 4);
           }
-          ctx.globalAlpha = 1;
           continue;
         }
 
@@ -364,7 +376,9 @@ export default function GraphCanvas({
           const pulse = 0.5 + 0.5 * Math.sin(now / 500 + nde.x);
           ctx.beginPath();
           ctx.arc(nde.x, nde.y, r + 5 + pulse * 4, 0, Math.PI * 2);
-          ctx.fillStyle = `rgba(233,185,73,${0.14 * dim})`;
+          // Alpha baked into the fill rather than set on the context: a stray
+          // globalAlpha leaks into everything drawn after it.
+          ctx.fillStyle = withAlpha(tc.available, 0.14 * dim);
           ctx.fill();
         }
 
@@ -382,12 +396,12 @@ export default function GraphCanvas({
         ctx.fillStyle = fill;
         ctx.fill();
         ctx.lineWidth = 2 / view.scale;
-        ctx.strokeStyle = STATUS_RING[status];
+        ctx.strokeStyle = statusRing(status, tc);
         ctx.stroke();
 
         // Known check.
         if (status === "known") {
-          ctx.strokeStyle = "#0a1a12";
+          ctx.strokeStyle = tc.bg;
           ctx.lineWidth = 2 / view.scale;
           ctx.beginPath();
           ctx.moveTo(nde.x - r * 0.4, nde.y);

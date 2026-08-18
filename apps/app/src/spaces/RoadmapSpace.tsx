@@ -1,7 +1,9 @@
-import { getRoadmap, graph as engine, ROADMAPS, roadmapNodeId, type RoadmapDef, type MapStatus } from "@abh/core";
+import { getGuide, getRoadmap, graph as engine, roadmapNodeId, roadmapsByKind, type MapStatus, type RoadmapDef, type TopicSeed } from "@abh/core";
 import { STATUS, useAbh } from "@abh/ui";
+import { BookOpen, Check, ChevronRight, Sparkles } from "lucide-react";
 import { useMemo, useState } from "react";
 import { useCelebrate } from "../Celebration";
+import { GuideSheet } from "../GuideSheet";
 
 /**
  * The Roadmap space — deliberately distraction-free.
@@ -21,31 +23,68 @@ export function RoadmapSpace() {
 }
 
 function Picker({ onPick }: { onPick: (def: RoadmapDef) => void }) {
+  const { skills, exams } = roadmapsByKind();
   return (
-    <div className="mx-auto h-full max-w-3xl overflow-y-auto px-5 py-10">
-      <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Start a roadmap</p>
-      <h1 className="mt-2 text-3xl font-bold">What do you want to learn?</h1>
-      <p className="mt-2 text-muted">Pick a path and follow it, distraction-free. It reveals as you go and joins your brain.</p>
-      <div className="mt-8 grid gap-3">
-        {ROADMAPS.map((r) => (
-          <button key={r.id} onClick={() => onPick(r)} className="group glass flex items-center justify-between rounded-2xl p-5 text-left transition hover:-translate-y-0.5 hover:border-accent">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="h-2.5 w-2.5 rounded-full" style={{ background: r.accent }} />
-                <span className="text-lg font-semibold">{r.title}</span>
-              </div>
-              <div className="mt-1 text-sm text-muted">{r.blurb}</div>
-              <div className="mt-2 text-xs text-subtle">{r.path.length} steps · {r.branches.length} branches</div>
+    <div className="h-full overflow-y-auto py-12">
+     <div className="doc">
+      <p className="t-eyebrow">Roadmaps</p>
+      <h1 className="t-title1 mt-2 text-balance">What do you want to learn?</h1>
+      <p className="t-body mt-2.5 max-w-[34rem] text-muted">
+        Pick a path and follow it, distraction-free. It reveals as you go, and
+        everything you finish lands in your brain.
+      </p>
+
+      {/* Skills and exams are different kinds of commitment — "20 steps" and
+          "87 chapters across three subjects" don't belong in one undifferentiated
+          list. */}
+      {([
+        ["Skills", skills],
+        ["Exams", exams],
+      ] as const).map(([label, group]) =>
+        group.length === 0 ? null : (
+          <section key={label} className="mt-7">
+            <h2 className="t-eyebrow mb-2 px-1">{label}</h2>
+            <div className="stack">
+              {group.map((r) => (
+                <button key={r.id} onClick={() => onPick(r)} className="row-btn group/row py-4">
+                  {/* Neutral tile. Each roadmap used to carry its own decorative
+                      colour (a mustard, a salmon) — colour here competes with the
+                      one accent that marks what to do next. */}
+                  <span className="grid h-10 w-10 shrink-0 place-items-center rounded-[13px] bg-surface-2 text-[15px] font-bold text-muted transition-colors group-hover/row:text-fg">
+                    {r.title[0]}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15.5px] font-semibold">{r.title}</span>
+                    <span className="mt-0.5 block truncate text-[13px] text-muted">{r.blurb}</span>
+                  </span>
+                  <span className="t-meta shrink-0 whitespace-nowrap">
+                    {r.kind === "exam"
+                      ? `${r.path.length} chapters`
+                      : `${r.path.length} steps`}
+                  </span>
+                  <ChevronRight size={17} className="shrink-0 text-subtle transition group-hover/row:translate-x-0.5 group-hover/row:text-fg" />
+                </button>
+              ))}
             </div>
-            <span className="text-accent opacity-0 transition group-hover:opacity-100">Start →</span>
-          </button>
-        ))}
-        <div className="rounded-2xl border border-dashed border-ai bg-ai/10 p-5">
-          <div className="flex items-center gap-2 text-ai"><span>✦</span><span className="text-lg font-semibold">Generate with AI</span></div>
-          <div className="mt-1 text-sm text-muted">Name any subject and AI builds a roadmap for it — even one nobody has mapped yet.</div>
-          <span className="mt-3 inline-block rounded-full border border-ai px-2.5 py-1 text-[11px] text-ai">Coming soon</span>
+          </section>
+        ),
+      )}
+
+      <div className="mt-4 flex items-start gap-3 rounded-[18px] px-4 py-4" style={{ background: "color-mix(in srgb, var(--ai) 8%, transparent)" }}>
+        <span className="mt-0.5 grid h-9 w-9 shrink-0 place-items-center rounded-xl text-ai" style={{ background: "color-mix(in srgb, var(--ai) 15%, transparent)" }}>
+          <Sparkles size={17} />
+        </span>
+        <div className="min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-[14.5px] font-semibold text-ai">Generate with AI</span>
+            <span className="rounded-full px-2 py-0.5 text-[10.5px] font-medium text-ai" style={{ background: "color-mix(in srgb, var(--ai) 15%, transparent)" }}>Soon</span>
+          </div>
+          <p className="mt-1 text-[13px] leading-relaxed text-muted">
+            Name any subject — even one nobody has mapped yet — and get a real path through it.
+          </p>
         </div>
       </div>
+     </div>
     </div>
   );
 }
@@ -56,6 +95,8 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
   const setProgress = useAbh((s) => s.setProgress);
   const leave = useAbh((s) => s.setActiveRoadmap);
   const [selectedSeed, setSelectedSeed] = useState<string | null>(null);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const guide = getGuide(def.guideId);
 
   // The roadmap's slice of the global graph.
   const ids = def.path.map((s) => roadmapNodeId(def.id, s.id));
@@ -65,7 +106,7 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
     for (const s of def.path) for (const need of s.needs ?? []) out.push({ from: roadmapNodeId(def.id, need), to: roadmapNodeId(def.id, s.id), strength: "hard" });
     return out;
   }, [def.id]);
-  const statuses = useMemo(() => engine.computeStatuses({ topics: inRoadmap, edges: edges.map((e, i) => ({ id: String(i), origin: "curated" as const, createdAt: 0, rev: 0, ...e })) }), [inRoadmap, edges]);
+  const statuses = useMemo(() => engine.computeStatuses({ topics: inRoadmap, edges: edges.map((e, i) => ({ id: String(i), origin: "curated" as const, createdAt: 0, updatedAt: 0, rev: 0, deviceId: "", ...e })) }), [inRoadmap, edges]);
   const known = inRoadmap.filter((t) => t.progress === "known").length;
   const percent = Math.round((known / Math.max(1, def.path.length)) * 100);
 
@@ -74,28 +115,126 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
   const nodeId = seed ? roadmapNodeId(def.id, seed.id) : null;
   const status: MapStatus = nodeId ? statuses.get(nodeId) ?? "locked" : "locked";
 
-  return (
-    <div className="mx-auto flex h-full max-w-2xl flex-col px-5 py-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="text-lg font-semibold">{def.title}</div>
-          <div className="text-xs text-subtle">{def.goal}</div>
-        </div>
-        <button onClick={() => void leave(null)} className="rounded-md border border-hairline px-2.5 py-1.5 text-xs text-muted transition hover:bg-surface-2">Change</button>
-      </div>
-      <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-surface-2"><div className="h-full rounded-full bg-accent transition-all" style={{ width: `${percent}%` }} /></div>
-      <div className="mt-1 text-right text-xs text-subtle">{percent}% · {known}/{def.path.length}</div>
+  const remaining = def.path.length - known;
 
-      {/* Focused current topic */}
+  // Group the path by unit. Seeds without one fall into a single trailing
+  // group, so a roadmap that declares no units renders exactly as before.
+  const groups = useMemo(() => {
+    if (!def.units?.length) return [{ id: "_all", title: "", seeds: def.path }];
+    const byUnit = new Map<string, TopicSeed[]>();
+    for (const seed of def.path) {
+      const key = seed.unit ?? "_rest";
+      const list = byUnit.get(key) ?? [];
+      list.push(seed);
+      byUnit.set(key, list);
+    }
+    const out = def.units
+      .map((u) => ({ id: u.id, title: u.title, seeds: byUnit.get(u.id) ?? [] }))
+      .filter((g) => g.seeds.length > 0);
+    const rest = byUnit.get("_rest");
+    if (rest?.length) out.push({ id: "_rest", title: "Also", seeds: rest });
+    return out;
+  }, [def]);
+
+  // Open the unit holding what you're working on; leave the rest closed. On an
+  // 87-chapter syllabus, everything expanded is not a list, it's a wall.
+  const [openUnits, setOpenUnits] = useState<Set<string>>(() => new Set());
+  const effectiveOpen = useMemo(() => {
+    if (openUnits.size > 0) return openUnits;
+    // Short roadmaps open fully — collapsing twenty steps only adds clicks.
+    if (groups.length <= 1 || def.path.length <= 28) return new Set(groups.map((g) => g.id));
+    // Long ones start entirely closed. Six unit headers with their own progress
+    // IS the syllabus at a glance, which is the thing a student can't get from
+    // a chapter list; expanding one twenty-chapter unit by default buries it.
+    return new Set<string>();
+  }, [openUnits, groups, def.path.length]);
+
+  function toggleUnit(id: string) {
+    setOpenUnits((prev) => {
+      const next = new Set(prev.size === 0 ? effectiveOpen : prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      // An empty set would fall back to the default, so keep a marker that
+      // means "the user really did close them all".
+      return next.size === 0 ? new Set(["_none"]) : next;
+    });
+  }
+
+  // What the current step rests on, and what completing it opens — read
+  // straight off the roadmap's own prerequisite declarations.
+  const prereqs = useMemo(
+    () => (seed?.needs ?? []).flatMap((id) => def.path.filter((s) => s.id === id)),
+    [seed, def],
+  );
+  const opens = useMemo(
+    () => (seed ? def.path.filter((s) => (s.needs ?? []).includes(seed.id)) : []),
+    [seed, def],
+  );
+
+  return (
+    <div className="h-full overflow-y-auto py-10">
+     <div className="mx-auto w-full max-w-[64rem] px-6">
+      {/* Header — the roadmap is context, not the hero. Kept quiet. */}
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <div className="t-eyebrow text-subtle">Following</div>
+          <div className="t-title3 mt-1 truncate">{def.title}</div>
+        </div>
+        <div className="flex shrink-0 items-center gap-1.5">
+          {guide && (
+            <button
+              onClick={() => setGuideOpen(true)}
+              className="pressable flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium text-accent transition"
+              style={{ background: "color-mix(in srgb, var(--accent) 11%, transparent)" }}
+            >
+              <BookOpen size={13} />
+              How to prepare
+            </button>
+          )}
+          <button
+            onClick={() => void leave(null)}
+            className="pressable rounded-full px-3 py-1.5 text-[12px] font-medium text-muted transition hover:bg-surface-2 hover:text-fg"
+          >
+            Change
+          </button>
+        </div>
+      </div>
+
+      {/* Progress — one calm line, numbers where the eye ends. */}
+      <div className="mt-5 flex items-center gap-3">
+        <div className="h-[5px] flex-1 overflow-hidden rounded-full bg-surface-2">
+          <div
+            className="h-full rounded-full bg-accent transition-[width] duration-700 ease-out"
+            style={{ width: `${percent}%` }}
+          />
+        </div>
+        <span className="t-foot tabular-nums text-muted">
+          {known}<span className="text-subtle">/{def.path.length}</span>
+        </span>
+      </div>
+
+      {/* Two columns where there's room: what to do next, and where you are.
+          One below the other on narrow screens. */}
+      <div className="mt-9 grid gap-x-12 gap-y-10 lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start">
+      {/* THE focal point — one thing dominates this screen. */}
       {seed && nodeId && (
-        <div className="mt-6 glass rounded-2xl p-6">
-          <div className="flex items-center gap-1.5 text-xs text-muted"><span className="h-2 w-2 rounded-full" style={{ background: STATUS[status].dot }} />{STATUS[status].label}</div>
-          <h2 className="mt-2 text-2xl font-bold">{seed.title}</h2>
-          <p className="mt-3 leading-relaxed text-fg">{seed.why}</p>
-          <div className="mt-5">
+        <section>
+          <div className="t-eyebrow flex items-center gap-2 text-accent">
+            <span className="h-1.5 w-1.5 rounded-full" style={{ background: STATUS[status].dot }} />
+            {status === "known" ? "Completed" : status === "locked" ? "Locked" : "Up next"}
+          </div>
+          <h2 className="t-title1 mt-3 text-balance">{seed.title}</h2>
+          <p className="t-body mt-4 max-w-[34rem] text-muted">{seed.why}</p>
+
+          <div className="mt-7 flex items-center gap-3">
             {status === "known" ? (
-              <button onClick={() => void setProgress(nodeId, "not_started")} className="rounded-lg border border-hairline px-4 py-2.5 text-sm font-semibold text-fg transition hover:bg-surface">✓ Known — undo</button>
+              <button
+                onClick={() => void setProgress(nodeId, "not_started")}
+                className="pressable inline-flex items-center gap-2 rounded-full bg-surface-2 px-5 py-3 text-[14px] font-semibold text-fg"
+              >
+                <Check size={16} className="text-known" /> Known
+                <span className="text-muted">· undo</span>
+              </button>
             ) : (
               <button
                 onClick={async () => {
@@ -103,31 +242,165 @@ function Runner({ def, topics }: { def: RoadmapDef; topics: ReturnType<typeof us
                   celebrate({ unlocked, streak, streakAdvanced: true });
                 }}
                 disabled={status === "locked"}
-                className="rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink transition hover:brightness-110 active:scale-[0.98] disabled:opacity-40"
+                className="pressable inline-flex items-center gap-2 rounded-full bg-accent px-6 py-3 text-[14px] font-semibold text-accent-ink shadow-[var(--e2)] hover:brightness-[1.06] disabled:opacity-40 disabled:shadow-none"
               >
-                Mark known
+                <Check size={16} /> Mark known
               </button>
             )}
-            {status === "locked" && <span className="ml-3 text-xs text-subtle">Clear its prerequisites first.</span>}
+            {status === "locked" && (
+              <span className="t-foot text-subtle">Clear its prerequisites first</span>
+            )}
           </div>
-        </div>
+
+          {/* Why this step sits where it does. The map already knows what
+              this needs and what it opens — showing it turns a checklist into
+              an explanation, and gives the column something to say. */}
+          {(prereqs.length > 0 || opens.length > 0) && (
+            <div className="mt-10 grid gap-8 sm:grid-cols-2">
+              {prereqs.length > 0 && (
+                <div>
+                  <h3 className="t-eyebrow">Builds on</h3>
+                  <ul className="mt-2.5 space-y-1.5">
+                    {prereqs.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          onClick={() => setSelectedSeed(p.id)}
+                          className="t-tight text-muted transition-colors hover:text-fg"
+                        >
+                          {p.title}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {opens.length > 0 && (
+                <div>
+                  <h3 className="t-eyebrow">Opens up</h3>
+                  <ul className="mt-2.5 space-y-1.5">
+                    {opens.map((p) => (
+                      <li key={p.id}>
+                        <button
+                          onClick={() => setSelectedSeed(p.id)}
+                          className="t-tight text-muted transition-colors hover:text-fg"
+                        >
+                          {p.title}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )}
+        </section>
       )}
 
-      {/* The path as a quiet checklist */}
-      <div className="mt-6 min-h-0 flex-1 overflow-y-auto">
-        <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-subtle">Your path</div>
-        {def.path.map((s, i) => {
-          const st = statuses.get(roadmapNodeId(def.id, s.id)) ?? "locked";
-          const active = s.id === seedId;
+      {/* The path — one grouped list, hairline seams, no boxed rows. On wide
+          screens it sticks beside the focal block so you never lose your place. */}
+      <section className="pb-6 lg:sticky lg:top-2">
+        <div className="mb-3 flex items-baseline justify-between px-1">
+          <span className="t-eyebrow text-subtle">Your path</span>
+          <span className="t-foot text-subtle">
+            {remaining > 0 ? `${remaining} to go` : "Complete"}
+          </span>
+        </div>
+        {/* Unit by unit. A flat list of 87 chapters is a wall; collapsed units
+            with their own progress let you see the shape of the syllabus and
+            work inside one subject at a time. */}
+        {groups.map((group) => {
+          const gDone = group.seeds.filter(
+            (x) => (statuses.get(roadmapNodeId(def.id, x.id)) ?? "locked") === "known",
+          ).length;
+          const open = effectiveOpen.has(group.id);
+          const holdsActive = group.seeds.some((x) => x.id === seedId);
           return (
-            <button key={s.id} onClick={() => setSelectedSeed(s.id)} className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition ${active ? "bg-surface-2" : "hover:bg-surface"}`}>
-              <span className="w-4 text-center text-[11px] text-subtle">{i + 1}</span>
-              <span className="h-2 w-2 shrink-0 rounded-full" style={{ background: STATUS[st].dot }} />
-              <span className={st === "known" ? "text-subtle line-through" : "text-fg"}>{s.title}</span>
-            </button>
+            <div key={group.id} className="mb-2.5">
+              {group.title && (
+                <button
+                  onClick={() => toggleUnit(group.id)}
+                  className="flex w-full items-center gap-2 rounded-[10px] px-1 py-1.5 text-left transition-colors hover:bg-[color-mix(in_srgb,var(--fg)_4%,transparent)]"
+                >
+                  <ChevronRight
+                    size={14}
+                    className="shrink-0 text-subtle transition-transform"
+                    style={{ transform: open ? "rotate(90deg)" : undefined }}
+                  />
+                  <span className="t-eyebrow flex-1 truncate">{group.title}</span>
+                  {holdsActive && !open && (
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent" />
+                  )}
+                  <span className="t-meta shrink-0 tabular-nums">
+                    {gDone}/{group.seeds.length}
+                  </span>
+                </button>
+              )}
+              {open && (
+                <div className="stack mt-1">
+                  {group.seeds.map((s, i) => {
+                    const st = statuses.get(roadmapNodeId(def.id, s.id)) ?? "locked";
+                    const active = s.id === seedId;
+                    const done = st === "known";
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setSelectedSeed(s.id)}
+                        className="row-btn row-tight relative"
+                        style={active ? { background: "color-mix(in srgb, var(--accent) 8%, transparent)" } : undefined}
+                      >
+                        {active && <span className="absolute inset-y-0 left-0 w-[3px] bg-accent" />}
+                        <span
+                          className="grid h-[20px] w-[20px] shrink-0 place-items-center rounded-full"
+                          style={{
+                            background: done ? "var(--known)" : "transparent",
+                            border: done ? "none" : `1.5px solid ${st === "locked" ? "var(--seam)" : "var(--available)"}`,
+                            color: "var(--accent-contrast)",
+                          }}
+                        >
+                          {done && <Check size={12} strokeWidth={3} />}
+                        </span>
+                        <span className={`flex-1 truncate text-[13.5px] ${done ? "text-subtle" : "text-fg"} ${active ? "font-semibold" : "font-medium"}`}>
+                          {s.title}
+                        </span>
+                        {/* Weight, where the content declares one. On an exam
+                            "how much is this worth" is the question being asked. */}
+                        {s.weight ? <Weight n={s.weight} /> : <span className="t-meta tabular-nums">{i + 1}</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           );
         })}
+      </section>
       </div>
+     </div>
+     {guideOpen && guide && <GuideSheet guide={guide} onClose={() => setGuideOpen(false)} />}
     </div>
+  );
+}
+
+/**
+ * How much a chapter is worth, as pips rather than a number. "4" invites the
+ * question "out of what?"; four filled marks out of five does not — and the
+ * underlying data is deliberately coarse, so a bare figure would imply a
+ * precision it doesn't have.
+ */
+function Weight({ n }: { n: number }) {
+  return (
+    <span
+      className="flex shrink-0 items-center gap-[2px]"
+      title={`Weight ${n} of 5`}
+      aria-label={`Weight ${n} of 5`}
+    >
+      {[1, 2, 3, 4, 5].map((i) => (
+        <span
+          key={i}
+          className="h-[3px] w-[3px] rounded-full"
+          style={{ background: i <= n ? "var(--accent)" : "var(--seam)" }}
+        />
+      ))}
+    </span>
   );
 }

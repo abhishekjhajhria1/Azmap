@@ -49,14 +49,14 @@ export function Onboarding({ onComplete }: { onComplete: (space: "roadmap" | "br
             <h1 className="text-2xl font-bold">Where do you want to begin, {name.trim() || "friend"}?</h1>
             <p className="mt-2 text-muted">You can always do both — everything you learn ends up on the same map.</p>
             <div className="mt-6 grid gap-3">
-              <button onClick={() => finish("roadmap")} className="group glass flex items-start gap-4 rounded-2xl p-5 text-left transition hover:-translate-y-0.5 hover:border-accent">
+              <button onClick={() => finish("roadmap")} className="glass flex items-start gap-4 rounded-2xl p-5 text-left transition hover:-translate-y-0.5 hover:border-accent">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-accent/15 text-accent"><Compass size={22} /></span>
                 <span>
                   <span className="block text-lg font-semibold">Follow a roadmap</span>
                   <span className="mt-1 block text-sm text-muted">Learn one thing, distraction-free. A focused path that reveals as you go.</span>
                 </span>
               </button>
-              <button onClick={() => finish("brain")} className="group glass flex items-start gap-4 rounded-2xl p-5 text-left transition hover:-translate-y-0.5 hover:border-accent">
+              <button onClick={() => finish("brain")} className="glass flex items-start gap-4 rounded-2xl p-5 text-left transition hover:-translate-y-0.5 hover:border-accent">
                 <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-ai/15 text-ai"><Brain size={22} /></span>
                 <span>
                   <span className="block text-lg font-semibold">Open my mind map</span>

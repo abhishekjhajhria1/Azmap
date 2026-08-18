@@ -1,74 +1,111 @@
 /**
- * The extension's bridge to @abh/core.
+ * The extension's bridge to @abh/core — wired for sync.
  *
- * Both the background service worker and the popup run in the same
- * extension-origin, so they share one IndexedDB — the same on-device map the
- * mobile and desktop apps will eventually sync with. Nothing here ever calls
- * the network; a capture is written locally and that's the whole transaction.
+ * ## The thing this file gets right that it previously didn't
+ *
+ * An extension runs on its own origin. Its IndexedDB is **not** the web app's
+ * IndexedDB and never can be, no matter how much they look alike. Before this,
+ * the extension wrote captures into a private database with no outbox, no
+ * engine and no account — so an article you saved while reading it was
+ * stranded on that origin forever, and "capture on your laptop, continue on
+ * your phone" was false for the one surface built entirely around capturing.
+ *
+ * The relay is what fixes it, and this is exactly what the relay is for: two
+ * origins that can't share storage can share an account. Writes go through
+ * `TrackedStorage` into an outbox that survives the service worker being torn
+ * down, and the engine drains it whenever the popup or a capture wakes us.
+ *
+ * Sync is still optional. With no account the extension is a local notebook
+ * that keeps working; the outbox just fills up, and everything in it goes out
+ * the moment a device is paired.
  */
 
-import { MapStore } from "@abh/core";
+import {
+  AccountManager,
+  EncryptedSyncAdapter,
+  HttpSyncTransport,
+  LocalOnlySync,
+  MapStore,
+  Outbox,
+  SyncEngine,
+  TrackedStorage,
+} from "@abh/core";
 import { IndexedDbStorage } from "@abh/core/storage/indexeddb";
+import { BrowserAccountStore, BrowserSyncState } from "./browserStorage.js";
 
+/** Set at build time; unset means local-only, which is a supported way to run. */
+export const SYNC_URL: string | null =
+  (import.meta.env.VITE_ABH_SYNC_URL as string | undefined)?.replace(/\/+$/, "") || null;
+
+let storage: IndexedDbStorage | null = null;
+let outbox: Outbox | null = null;
 let singleton: MapStore | null = null;
+let engine: SyncEngine | null = null;
+
+export const account = new AccountManager(new BrowserAccountStore());
+
+function init(): void {
+  if (singleton) return;
+  storage = new IndexedDbStorage();
+  outbox = new Outbox(new BrowserSyncState());
+  // Every write goes through the tracker, so a capture is queued even when
+  // there's nowhere to send it yet.
+  singleton = new MapStore(new TrackedStorage(storage, outbox));
+  engine = new SyncEngine({
+    storage,
+    outbox,
+    adapter: new LocalOnlySync(),
+    // The worker is short-lived, so a polling interval is pointless — we sync
+    // on the events that matter instead (see `syncNow`).
+    intervalMs: 0,
+  });
+}
 
 export function getStore(): MapStore {
-  if (!singleton) singleton = new MapStore(new IndexedDbStorage());
-  return singleton;
+  init();
+  return singleton!;
+}
+
+export function getEngine(): SyncEngine {
+  init();
+  return engine!;
 }
 
 /**
- * Seed a tiny, believable map the first time the extension runs, so the popup
- * has something to show and the "AI proposes / you accept" flow is visible.
- * Idempotent: does nothing once any topic exists.
+ * Point the engine at the relay if this device is enrolled. Cheap and
+ * idempotent, so it's safe to call on every wake-up.
  */
-export async function seedIfEmpty(): Promise<void> {
-  const store = getStore();
-  const g = await store.graph();
-  if (g.topics.length > 0) return;
+export async function connectSync(): Promise<boolean> {
+  init();
+  const current = await account.current();
+  if (!current?.endpoint || !current.token) return false;
+  const key = await account.accountKey();
+  engine!.setAdapter(
+    new EncryptedSyncAdapter(
+      new HttpSyncTransport({ endpoint: current.endpoint, token: current.token }),
+      key,
+      { deviceId: await storage!.getDeviceId() },
+    ),
+  );
+  return true;
+}
 
-  const html = await store.addTopic({
-    title: "HTML & the DOM",
-    whyItMatters: "Everything you render on the web is a DOM tree.",
-    origin: "curated",
-  });
-  await store.setProgress(html.id, "known");
+/**
+ * Sync now, and don't let a failure escape.
+ *
+ * Called after a capture and when the popup opens — the two moments an
+ * extension is actually alive. A rejected sync must never surface as a broken
+ * capture: the write already succeeded locally, which is the part that matters.
+ */
+export async function syncNow(): Promise<void> {
+  try {
+    if (await connectSync()) await getEngine().sync();
+  } catch {
+    // Queued in the outbox; it'll go out next time.
+  }
+}
 
-  const css = await store.addTopic({
-    title: "CSS layout",
-    whyItMatters: "Flexbox and grid are how modern pages are composed.",
-    origin: "curated",
-  });
-  const js = await store.addTopic({
-    title: "JavaScript fundamentals",
-    whyItMatters: "The language the whole platform runs on.",
-    origin: "curated",
-  });
-  await store.addEdge(html.id, css.id);
-  await store.addEdge(html.id, js.id);
-
-  // A locked topic waiting on JS, to show the gating.
-  const react = await store.addTopic({
-    title: "React",
-    whyItMatters: "Component model built on the JS you just learned.",
-    origin: "curated",
-  });
-  await store.addEdge(js.id, react.id);
-
-  await store.addRoadmap({
-    title: "Front-end foundations",
-    domain: "web",
-    curated: true,
-    topicIds: [html.id, css.id, js.id, react.id],
-  });
-
-  // A pending AI proposal the user can accept or reject from the popup.
-  await store.proposeSuggestion({
-    kind: "topic",
-    payload: {
-      title: "TypeScript",
-      whyItMatters: "Types catch the bugs JavaScript lets through.",
-    },
-    rationale: "Sits right at the edge of what you already know.",
-  });
+/** Whether this device can reach a map beyond itself. */
+export async function isConnected(): Promise<boolean> {
+  return SYNC_URL !== null && (await account.isEnrolled());
 }

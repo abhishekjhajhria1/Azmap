@@ -18,11 +18,17 @@ import Sigma from "sigma";
 import { readThemeColors, type ThemeColors } from "./theme.js";
 import { useTheme } from "./ThemeProvider.js";
 
+/** What a node's colour means. Status, not subject — see `buildGraphData`. */
+export type NodeTone = "known" | "available" | "locked";
+
 export interface GraphNode {
   id: string;
   label: string;
-  /** Domain accent colour (stays across themes). */
-  color: string;
+  /**
+   * What this node is, so the view can resolve its colour from live tokens.
+   * A baked colour string would go stale the moment the theme flipped.
+   */
+  tone?: NodeTone;
   /** Ghost = an unaccepted AI suggestion sitting on the frontier. */
   ghost?: boolean;
   /** Locked topics render in a neutral, theme-aware muted tone. */
@@ -42,6 +48,12 @@ interface Props {
   links: GraphLink[];
   selectedId?: string | null;
   onSelect?: (id: string | null) => void;
+  /** Live search: matching nodes stay lit, everything else dims. */
+  query?: string;
+  /** Bumping this number re-frames the camera on the whole graph. */
+  fitToken?: number;
+  /** Bumping this zooms in (+1) or out (-1) relative to the last value. */
+  zoomToken?: number;
   className?: string;
   style?: React.CSSProperties;
 }
@@ -59,7 +71,14 @@ function topoKey(nodes: GraphNode[], links: GraphLink[]): string {
  *  domain accents, stored per node, stay). */
 function paintGraph(graph: Graph, c: ThemeColors) {
   graph.forEachNode((id, attr) => {
-    const col = attr.ghost ? c.ai : attr.locked ? c.locked : attr.dcolor;
+    const tone = attr.tone as string | undefined;
+    const col = attr.ghost
+      ? c.ai
+      : attr.locked || tone === "locked"
+        ? c.locked
+        : tone === "known"
+          ? c.known
+          : c.available;
     graph.setNodeAttribute(id, "color", col);
   });
   graph.forEachEdge((id, attr) => {
@@ -77,6 +96,9 @@ export default function GraphView({
   links,
   selectedId,
   onSelect,
+  query,
+  fitToken,
+  zoomToken,
   className,
   style,
 }: Props) {
@@ -90,7 +112,9 @@ export default function GraphView({
   const nodesRef = useRef<GraphNode[]>(nodes);
   const onSelectRef = useRef(onSelect);
   const colorsRef = useRef<ThemeColors>(readThemeColors());
+  const queryRef = useRef<string>("");
 
+  queryRef.current = (query ?? "").trim().toLowerCase();
   selectedRef.current = selectedId ?? null;
   nodesRef.current = nodes;
   onSelectRef.current = onSelect;
@@ -117,6 +141,20 @@ export default function GraphView({
     // Dynamic styling: focus a node's neighbourhood, dim the rest (Obsidian-style).
     renderer.setSetting("nodeReducer", (node, data) => {
       const res = { ...data } as Record<string, unknown> & { hidden?: boolean };
+
+      // Live search wins over hover-focus: matches stay lit, the rest recede.
+      const q = queryRef.current;
+      if (q) {
+        const label = String((data as { label?: string }).label ?? "").toLowerCase();
+        if (!label.includes(q)) {
+          res.color = colorsRef.current.muted;
+          res.label = "";
+        } else {
+          res.highlighted = true;
+        }
+        return res;
+      }
+
       const focus = hoverRef.current ?? selectedRef.current;
       if (focus) {
         const g = graphRef.current!;
@@ -174,18 +212,31 @@ export default function GraphView({
     layoutRef.current?.stop();
     graph.clear();
 
+    // How connected a topic is IS its importance on this map — a prerequisite
+    // three other things depend on matters more than a leaf. Derived here from
+    // the links so no caller has to compute and pass it (none ever did, which
+    // is why every node used to render at exactly the same size).
+    const degree = new Map<string, number>();
+    for (const l of links) {
+      degree.set(l.source, (degree.get(l.source) ?? 0) + 1);
+      degree.set(l.target, (degree.get(l.target) ?? 0) + 1);
+    }
+
     const n = Math.max(1, nodes.length);
     nodes.forEach((node, i) => {
       const a = (i / n) * Math.PI * 2;
+      const weight = node.weight ?? degree.get(node.id) ?? 0;
       graph.addNode(node.id, {
         label: node.label,
         // Seed on a circle so FA2 expands outward pleasingly.
         x: Math.cos(a) * 10 + Math.random(),
         y: Math.sin(a) * 10 + Math.random(),
-        size: node.ghost ? 6 : 6 + Math.min(9, (node.weight ?? 0) * 1.4),
-        color: node.color, // painted below from tokens
+        // Square-root so a hub with 12 edges reads as bigger without becoming
+        // a planet; the range stays tight enough to look composed.
+        size: node.ghost ? 5 : 5 + Math.min(7, Math.sqrt(weight) * 2.6),
+        color: "#000000", // painted below from live tokens
         // Kept so a theme flip can recompute colours without a rebuild.
-        dcolor: node.color,
+        tone: node.tone ?? "available",
         ghost: !!node.ghost,
         locked: !!node.locked,
         zIndex: node.ghost ? 2 : 1,
@@ -194,7 +245,9 @@ export default function GraphView({
     for (const l of links) {
       if (!graph.hasNode(l.source) || !graph.hasNode(l.target)) continue;
       if (graph.hasEdge(l.source, l.target)) continue;
-      graph.addEdge(l.source, l.target, { soft: !!l.soft, size: 1 });
+      // Hairlines. Edges are the map's connective tissue, not its subject —
+      // at size 1 they read as cables and dominate the composition.
+      graph.addEdge(l.source, l.target, { soft: !!l.soft, size: l.soft ? 0.6 : 0.8 });
     }
     colorsRef.current = readThemeColors();
     paintGraph(graph, colorsRef.current);
@@ -218,10 +271,28 @@ export default function GraphView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
-  // Reflect external selection changes without rebuilding.
+  // Reflect external selection / search changes without rebuilding the graph.
   useEffect(() => {
     sigmaRef.current?.refresh();
-  }, [selectedId]);
+  }, [selectedId, query]);
+
+  // Camera: frame the whole graph.
+  useEffect(() => {
+    if (fitToken == null) return;
+    sigmaRef.current?.getCamera().animatedReset();
+  }, [fitToken]);
+
+  // Camera: step zoom. The sign of the change decides the direction.
+  const lastZoom = useRef<number | undefined>(zoomToken);
+  useEffect(() => {
+    if (zoomToken == null) return;
+    const prev = lastZoom.current ?? zoomToken;
+    lastZoom.current = zoomToken;
+    const cam = sigmaRef.current?.getCamera();
+    if (!cam || zoomToken === prev) return;
+    if (zoomToken > prev) cam.animatedZoom({ duration: 220 });
+    else cam.animatedUnzoom({ duration: 220 });
+  }, [zoomToken]);
 
   // Recolour live when the theme flips (neutrals/labels/edges switch).
   useEffect(() => {

@@ -16,6 +16,7 @@ import type {
   Profile,
   Roadmap,
   Suggestion,
+  Tombstone,
   Topic,
 } from "../types.js";
 
@@ -61,6 +62,19 @@ export interface StorageAdapter {
   // Profile — a single on-device record (null until onboarding).
   getProfile(): Promise<Profile | null>;
   putProfile(p: Profile): Promise<void>;
+
+  /**
+   * Tombstones. A delete MUST record one, otherwise merging a peer that still
+   * holds the record silently resurrects it.
+   */
+  getDeletions(): Promise<Tombstone[]>;
+  putDeletion(t: Tombstone): Promise<void>;
+  /** Drop tombstones older than `before` (they're only needed until every
+   *  peer has seen them). */
+  pruneDeletions(before: number): Promise<void>;
+
+  /** This device's stable id — the deterministic merge tiebreak. */
+  getDeviceId(): Promise<string>;
 
   /** Full-dataset read/replace — powers export, import, backup and sync. */
   exportSnapshot(): Promise<MapSnapshot>;

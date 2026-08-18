@@ -6,6 +6,12 @@
     <title>ABH</title>
   </head>
   <body>
+    <!-- The drawn ground the popup floats on: the app's own survey field
+         (plotted rules, contour rings, one faint wash), all CSS gradients.
+         In the markup rather than in React on purpose — it paints with the
+         first frame, so opening the popup never flashes a bare panel while
+         the map loads out of IndexedDB. -->
+    <div class="abh-ambient" aria-hidden="true"><i></i></div>
     <div id="root"></div>
     <script type="module" src="./main.tsx"></script>
   </body>

@@ -16,13 +16,17 @@
       "import": "./dist/storage/indexeddb.js"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "dev": "tsc -p tsconfig.json --watch",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "vectors": "tsx scripts/emit-vectors.ts",
+    "content": "tsx scripts/emit-content.ts"
   },
   "dependencies": {
     "idb": "^8.0.0",

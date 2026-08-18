@@ -1,102 +1,84 @@
 "use client";
 
 /**
- * AdaptiveShell — one nav that becomes the right thing at every size:
- *   compact  → bottom navigation bar (glass)
- *   medium   → left navigation rail (foldable unfolded / small tablet)
- *   expanded → permanent left sidebar (tablet / iPad / desktop)
+ * AdaptiveShell — the layout host.
  *
- * All colours come from theme tokens, and the nav is a frosted-glass surface,
- * so it follows light/dark automatically. The Flutter app mirrors this exact
- * bottom-nav ↔ rail ↔ sidebar progression.
+ * Navigation floats *over* this content, so the shell's only job is to give the
+ * app a full-viewport canvas and reserve exactly enough room that content can
+ * scroll past the chrome without ever hiding behind it.
+ *
+ * Which chrome depends on the device and the user's preference: a rail on the
+ * left for screens with room for one, or the dock at top/bottom. Compact
+ * screens always get the dock — a rail on a 390px phone is a wall, not a
+ * navigation.
  */
 
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { useBreakpoint } from "./breakpoints.js";
+import { resolveDockPosition, type DockPosition } from "./FloatingDock.js";
+import { railWidth } from "./NavSidebar.js";
 
-export interface NavItem {
-  id: string;
-  label: string;
-  icon: ReactNode;
-}
+export type NavLayout = "sidebar" | "dock";
 
 interface Props {
-  items: NavItem[];
-  activeId: string;
-  onSelect: (id: string) => void;
-  brand?: ReactNode;
-  action?: ReactNode;
   children: ReactNode;
+  /** Where the dock sits, so we can reserve room for it. */
+  dockPosition?: DockPosition;
+  /** Which navigation the user prefers on screens that can host either. */
+  navLayout?: NavLayout;
+  /** Whether the rail is collapsed to its icon width. */
+  railCollapsed?: boolean;
 }
 
-const glass: CSSProperties = {
-  background: "var(--glass-bg)",
-  WebkitBackdropFilter: "saturate(180%) blur(var(--glass-blur))",
-  backdropFilter: "saturate(180%) blur(var(--glass-blur))",
-};
+/** Dock height + inset + a little breathing room. */
+const DOCK_CLEARANCE = 84;
+/**
+ * On phones the omni-bar trigger also lives above the bottom edge, stacked over
+ * the dock. Reserve its height too, or the last rows of a list sit underneath a
+ * floating pill — which is exactly what it looked like before.
+ */
+const OMNI_CLEARANCE = 66;
 
-export function AdaptiveShell({ items, activeId, onSelect, brand, action, children }: Props) {
+/**
+ * The rail only applies where there's width for it *and* the user wants it.
+ * Exported so the app can render the matching component without re-deriving
+ * the rule — one source of truth for "which navigation am I wearing".
+ */
+export function useResolvedNav(navLayout: NavLayout = "sidebar"): NavLayout {
   const size = useBreakpoint();
-  const compact = size === "compact";
-  const expanded = size === "expanded";
+  return size === "expanded" && navLayout === "sidebar" ? "sidebar" : "dock";
+}
 
-  if (compact) {
-    return (
-      <div style={{ display: "flex", flexDirection: "column", height: "100dvh", color: "var(--fg)" }}>
-        <div style={{ flex: 1, minHeight: 0, position: "relative" }}>{children}</div>
-        <nav style={{ ...glass, display: "flex", borderTop: "1px solid var(--glass-border)", paddingBottom: "env(safe-area-inset-bottom)" }}>
-          {items.map((it) => {
-            const active = it.id === activeId;
-            return (
-              <button
-                key={it.id}
-                onClick={() => onSelect(it.id)}
-                style={{
-                  flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-                  padding: "9px 4px 8px", border: "none", background: "none", cursor: "pointer",
-                  color: active ? "var(--fg)" : "var(--fg-subtle)", fontSize: 11, fontWeight: active ? 600 : 500,
-                }}
-              >
-                <span style={{ display: "grid", placeItems: "center", color: active ? "var(--accent)" : "inherit" }}>{it.icon}</span>
-                {it.label}
-              </button>
-            );
-          })}
-        </nav>
-      </div>
-    );
-  }
+export function AdaptiveShell({
+  children,
+  dockPosition = "auto",
+  navLayout = "sidebar",
+  railCollapsed = false,
+}: Props) {
+  const compact = useBreakpoint() === "compact";
+  const nav = useResolvedNav(navLayout);
+  const place = resolveDockPosition(dockPosition, compact);
+  const rail = nav === "sidebar";
 
-  const railWidth = expanded ? 216 : 74;
   return (
-    <div style={{ display: "flex", height: "100dvh", color: "var(--fg)" }}>
-      <nav style={{ ...glass, width: railWidth, flexShrink: 0, display: "flex", flexDirection: "column", borderRight: "1px solid var(--glass-border)", padding: 12, gap: 4 }}>
-        {brand && <div style={{ padding: expanded ? "6px 8px 16px" : "6px 0 16px", display: "flex", justifyContent: expanded ? "flex-start" : "center" }}>{brand}</div>}
-        {items.map((it) => {
-          const active = it.id === activeId;
-          return (
-            <button
-              key={it.id}
-              onClick={() => onSelect(it.id)}
-              title={it.label}
-              style={{
-                display: "flex", alignItems: "center", gap: 11,
-                justifyContent: expanded ? "flex-start" : "center",
-                padding: expanded ? "10px 12px" : "11px 0", borderRadius: 12, border: "none",
-                background: active ? "color-mix(in srgb, var(--accent) 14%, transparent)" : "transparent",
-                cursor: "pointer",
-                color: active ? "var(--fg)" : "var(--fg-muted)", fontSize: 14, fontWeight: active ? 600 : 500,
-                width: "100%", textAlign: "left",
-              }}
-            >
-              <span style={{ display: "grid", placeItems: "center", color: active ? "var(--accent)" : "inherit" }}>{it.icon}</span>
-              {expanded && <span>{it.label}</span>}
-            </button>
-          );
-        })}
-        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 8, alignItems: expanded ? "stretch" : "center" }}>{action}</div>
-      </nav>
-      <main style={{ flex: 1, minWidth: 0, position: "relative" }}>{children}</main>
+    <div
+      style={{
+        height: "100dvh",
+        overflow: "hidden",
+        color: "var(--fg)",
+        paddingTop: !rail && place === "top" ? DOCK_CLEARANCE : 0,
+        paddingBottom:
+          !rail && place === "bottom"
+            ? DOCK_CLEARANCE + (compact ? OMNI_CLEARANCE : 0)
+            : 0,
+        // The rail floats at --float-inset, so the content clears its width
+        // plus that inset on both of its sides.
+        paddingLeft: rail ? railWidth(railCollapsed) + 24 : 0,
+        boxSizing: "border-box",
+        transition: "padding-left 220ms cubic-bezier(.4,0,.2,1)",
+      }}
+    >
+      <main style={{ position: "relative", height: "100%", minHeight: 0 }}>{children}</main>
     </div>
   );
 }

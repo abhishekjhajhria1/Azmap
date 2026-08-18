@@ -1,7 +1,18 @@
-import type { Capture, Suggestion, Topic } from "@abh/core";
+import { streakIsLive, type Capture, type Suggestion, type Topic } from "@abh/core";
+import {
+  BookOpen, Check, Flame, Globe, Inbox, Plus, ShieldCheck, Sparkles, StickyNote, TextQuote,
+} from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { browser } from "wxt/browser";
-import { getStore, seedIfEmpty } from "../../lib/store";
+import { account, getStore, isConnected, syncNow } from "../../lib/store";
+
+/**
+ * The popup's job is capture — one tap, never steal focus — with just enough
+ * of the map to answer "what's open to me now?".
+ *
+ * It shares the product's design tokens, so it follows the same light/dark
+ * system as the app rather than being a separate dark-only surface.
+ */
 
 interface Snapshot {
   available: Topic[];
@@ -9,41 +20,68 @@ interface Snapshot {
   suggestions: Suggestion[];
   known: number;
   total: number;
+  streakDays: number;
+  streakLive: boolean;
 }
+
+const CAPTURE_ICON: Record<string, typeof Globe> = {
+  page: Globe,
+  selection: TextQuote,
+  clipboard: StickyNote,
+  screenshot: StickyNote,
+  note: StickyNote,
+};
 
 export function App() {
   const [snap, setSnap] = useState<Snapshot | null>(null);
   const [newTopic, setNewTopic] = useState("");
+  const [justSaved, setJustSaved] = useState(false);
+  const [connected, setConnected] = useState<boolean | null>(null);
 
   const refresh = useCallback(async () => {
     const store = getStore();
-    await seedIfEmpty();
-    const [available, captures, suggestions, g] = await Promise.all([
+    // Opening the popup is one of the two moments this extension is reliably
+    // alive, so it's when we drain anything captured while it wasn't.
+    void syncNow();
+    setConnected(await isConnected());
+    const [available, suggestions, g, profile, snapshot] = await Promise.all([
       store.availableNow(),
-      store.export().then((s) => s.captures),
       store.pendingSuggestions(),
       store.graph(),
+      store.getProfile(),
+      store.export(),
     ]);
     setSnap({
       available,
-      captures: captures.sort((a, b) => b.createdAt - a.createdAt).slice(0, 5),
+      captures: snapshot.captures.sort((a, b) => b.createdAt - a.createdAt).slice(0, 4),
       suggestions,
       known: g.topics.filter((t) => t.progress === "known").length,
       total: g.topics.length,
+      streakDays: profile?.streakDays ?? 0,
+      streakLive: profile ? streakIsLive(profile) : false,
     });
   }, []);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  useEffect(() => { void refresh(); }, [refresh]);
+
+  /**
+   * Pairing needs a QR and a keyboard; a 372px popup is the wrong place for it.
+   * Send people to the app, which already does it properly.
+   */
+  async function openApp() {
+    const url = (await account.current())?.endpoint ?? "https://abh.app";
+    await browser.tabs.create({ url });
+  }
 
   async function complete(id: string) {
     await getStore().complete(id);
     await refresh();
+    void syncNow();
   }
   async function accept(id: string) {
     await getStore().acceptSuggestion(id);
     await refresh();
+    void syncNow();
   }
   async function reject(id: string) {
     await getStore().rejectSuggestion(id);
@@ -59,12 +97,12 @@ export function App() {
   async function saveThisPage() {
     const [tab] = await browser.tabs.query({ active: true, currentWindow: true });
     await getStore().addCapture({ kind: "page", title: tab?.title ?? "", url: tab?.url });
+    setJustSaved(true);
+    window.setTimeout(() => setJustSaved(false), 1600);
     await refresh();
   }
 
-  if (!snap) {
-    return <div className="loading">Loading your map…</div>;
-  }
+  if (!snap) return <div className="loading">Loading your map…</div>;
 
   const percent = snap.total ? Math.round((snap.known / snap.total) * 100) : 0;
 
@@ -75,16 +113,31 @@ export function App() {
           <span className="logo">A</span>
           <span>ABH</span>
         </div>
-        <div className="progress">{percent}% known</div>
+        <div className="stats">
+          <span className="stat">{percent}% known</span>
+          {snap.streakDays > 0 && (
+            <span className={`stat ${snap.streakLive ? "stat--streak" : ""}`}>
+              <Flame size={12} />
+              {snap.streakDays}
+            </span>
+          )}
+        </div>
       </header>
 
-      <button className="save-btn" onClick={saveThisPage}>
-        + Save this page to my map
-      </button>
+      {/* Primary action — the popup exists for this. */}
+      <div className="capture">
+        <button className="save-btn" onClick={saveThisPage}>
+          {justSaved ? <><Check size={16} /> Saved to your map</> : <><Plus size={16} /> Save this page</>}
+        </button>
+        <div className="save-hint">
+          or right-click anything · <span className="kbd">Ctrl+Shift+S</span>
+        </div>
+      </div>
 
       {snap.suggestions.length > 0 && (
-        <section>
-          <h2 className="section-title">AI suggests</h2>
+        <section className="section">
+          <div className="section-title section-title--ai"><Sparkles size={12} /> AI suggests</div>
+          <div className="items">
           {snap.suggestions.map((s) => (
             <div key={s.id} className="card suggestion">
               <div className="card-title">
@@ -92,64 +145,85 @@ export function App() {
               </div>
               {s.rationale && <div className="card-sub">{s.rationale}</div>}
               <div className="row">
-                <button className="accept" onClick={() => accept(s.id)}>
-                  Accept
-                </button>
-                <button className="reject" onClick={() => reject(s.id)}>
-                  Dismiss
-                </button>
+                <button className="accept" onClick={() => accept(s.id)}>Add to map</button>
+                <button className="reject" onClick={() => reject(s.id)}>Dismiss</button>
               </div>
             </div>
           ))}
+          </div>
         </section>
       )}
 
-      <section>
-        <h2 className="section-title">Open to you now</h2>
-        {snap.available.length === 0 && (
-          <div className="empty">Nothing unlocked yet — add a topic below.</div>
-        )}
-        {snap.available.map((t) => (
-          <div key={t.id} className="card">
-            <div className="card-title">{t.title}</div>
-            {t.whyItMatters && <div className="card-sub">{t.whyItMatters}</div>}
-            <button className="done" onClick={() => complete(t.id)}>
-              Mark known
-            </button>
+      <section className="section">
+        <div className="section-title"><BookOpen size={12} /> Open to you now</div>
+        {snap.available.length === 0 ? (
+          <div className="empty">
+            <span className="empty-icon"><BookOpen size={18} /></span>
+            <span>
+              {connected === false
+                ? "Nothing here yet. Pair this browser with your map to see what's open to you."
+                : "Nothing unlocked yet — add something you want to learn."}
+            </span>
           </div>
-        ))}
-        <div className="row add-row">
+        ) : (
+          <div className="items">{snap.available.slice(0, 3).map((t) => (
+            <div key={t.id} className="card">
+              <div className="card-main">
+                <div className="card-title">{t.title}</div>
+                {t.whyItMatters && <div className="card-sub">{t.whyItMatters}</div>}
+              </div>
+              {/* Always present rather than revealed on hover. A hover-only
+                  affordance costs a row its full height in reserved space, and
+                  three rows of dead air is most of a 372px popup. */}
+              <button
+                className="done"
+                onClick={() => complete(t.id)}
+                title="Mark known"
+                aria-label={`Mark ${t.title} known`}
+              >
+                <Check size={14} />
+              </button>
+            </div>
+          ))}</div>
+        )}
+        <div className="add-row">
           <input
             value={newTopic}
             onChange={(e) => setNewTopic(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addTopic()}
             placeholder="Add something to learn…"
           />
-          <button className="add" onClick={addTopic}>
-            Add
-          </button>
+          <button className="add" onClick={addTopic}>Add</button>
         </div>
       </section>
 
       {snap.captures.length > 0 && (
-        <section>
-          <h2 className="section-title">Recently captured</h2>
-          {snap.captures.map((c) => (
-            <a
-              key={c.id}
-              className="capture"
-              href={c.url}
-              target="_blank"
-              rel="noreferrer"
-            >
-              <span className="capture-kind">{c.kind}</span>
-              <span className="capture-title">{c.title || c.url || "Untitled"}</span>
-            </a>
-          ))}
+        <section className="section">
+          <div className="section-title"><Inbox size={12} /> Recently captured</div>
+          {snap.captures.map((c) => {
+            const Icon = CAPTURE_ICON[c.kind] ?? Globe;
+            return (
+              <a key={c.id} className="capture-item" href={c.url} target="_blank" rel="noreferrer">
+                <span className="capture-kind"><Icon size={12} /></span>
+                <span className="capture-title">{c.title || c.url || "Untitled"}</span>
+              </a>
+            );
+          })}
         </section>
       )}
 
-      <footer className="footer">Private — nothing leaves this device.</footer>
+      <footer className="footer">
+        {connected ? (
+          <>
+            <ShieldCheck size={11} /> Encrypted — synced to your other devices
+          </>
+        ) : (
+          <>
+            <ShieldCheck size={11} /> Private — saved on this device
+            <button className="link" onClick={() => void openApp()}>Pair</button>
+          </>
+        )}
+      </footer>
     </div>
   );
 }

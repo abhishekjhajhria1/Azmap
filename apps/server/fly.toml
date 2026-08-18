@@ -1,0 +1,38 @@
+# Fly.io. Chosen for the shape of this service rather than brand loyalty: the
+# relay is one small stateful process that wants a persistent disk and low
+# latency to India, and Fly does volumes and region pinning without a managed
+# database bill.
+#
+# The same Dockerfile runs on Render, Railway, a VPS, or your own hardware. The
+# only real requirement is a persistent volume — see the note in the README
+# about what happens without one.
+app = "abh-relay"
+primary_region = "bom"   # Mumbai: ABH's first users are Indian exam students
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8080"
+  ABH_DB = "/data/abh.sqlite"
+
+[[mounts]]
+  source = "abh_data"
+  destination = "/data"
+
+[http_service]
+  internal_port = 8080
+  force_https = true
+  auto_stop_machines = "suspend"
+  auto_start_machines = true
+  # One machine, not zero. The relay holds a SQLite file on a local volume, so
+  # two machines would each have their own log and devices would sync to
+  # whichever they happened to reach — a split brain with no error message.
+  min_machines_running = 1
+
+  [[http_service.checks]]
+    interval = "30s"
+    timeout = "3s"
+    grace_period = "10s"
+    method = "GET"
+    path = "/v1/health"

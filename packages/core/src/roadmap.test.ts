@@ -48,9 +48,15 @@ describe("startRoadmap (mind map is the superset)", () => {
   });
 
   it("computes roadmap progress from the seeded state", async () => {
-    await store.startRoadmap(frontend());
-    // html + css known out of 11 path topics ≈ 18%.
-    expect(await store.roadmapProgress("frontend")).toBe(18);
+    const def = frontend();
+    await store.startRoadmap(def);
+    // Derived from the def, not hardcoded: a percentage baked in here breaks
+    // every time someone edits the content, which is the opposite of what this
+    // test is for. It checks the *arithmetic*, and content is free to change.
+    const seededKnown = def.path.filter((s) => s.progress === "known").length;
+    const expected = Math.round((seededKnown / def.path.length) * 100);
+    expect(await store.roadmapProgress("frontend")).toBe(expected);
+    expect(seededKnown).toBeGreaterThan(0); // the fixture must actually seed some
   });
 });
 
@@ -102,6 +108,35 @@ describe("explore (curiosity feeds the second brain)", () => {
     const g = await store.graph();
     expect(g.edges).toHaveLength(0);
     expect(g.topics.map((t) => t.id)).toEqual([child.id]);
+  });
+});
+
+describe("linkCapture (a second brain whose contents point at each other)", () => {
+  it("files a capture against an existing topic instead of minting a duplicate", async () => {
+    const topic = await store.addTopic({ title: "Backpropagation" });
+    const capture = await store.addCapture({ kind: "page", title: "Backprop explained" });
+
+    const linked = await store.linkCapture(capture.id, topic.id);
+    expect(linked?.linkedTopicIds).toEqual([topic.id]);
+    expect(linked?.rev).toBe(capture.rev + 1);
+    // The map didn't grow — that's the whole point.
+    expect((await store.graph()).topics).toHaveLength(1);
+  });
+
+  it("is idempotent, so a double-tap can't duplicate the link", async () => {
+    const topic = await store.addTopic({ title: "Backpropagation" });
+    const capture = await store.addCapture({ kind: "page", title: "Backprop" });
+    await store.linkCapture(capture.id, topic.id);
+    const again = await store.linkCapture(capture.id, topic.id);
+    expect(again?.linkedTopicIds).toEqual([topic.id]);
+  });
+
+  it("returns null rather than throwing when either end is gone", async () => {
+    // Proposals are computed before they're tapped, and another device may have
+    // deleted the record in between. That's ordinary, not exceptional.
+    const capture = await store.addCapture({ kind: "note", title: "Orphan" });
+    expect(await store.linkCapture(capture.id, "t_missing")).toBeNull();
+    expect(await store.linkCapture("c_missing", "t_missing")).toBeNull();
   });
 });
 

@@ -33,6 +33,7 @@ import {
   type MapStatus,
   type Profile,
   type Progress,
+  type Collection,
   type Roadmap,
   type Suggestion,
   Topic,
@@ -64,6 +65,18 @@ export class MapStore {
     return { topics, edges };
   }
 
+  /**
+   * Per-collection reads, so a UI that needs one collection doesn't pay for a
+   * full `export()` of all six. Reloading only what changed is the difference
+   * between a mutation costing one store read and costing the whole database.
+   */
+  async allRoadmaps(): Promise<Roadmap[]> {
+    return this.storage.getRoadmaps();
+  }
+  async allCaptures(): Promise<Capture[]> {
+    return this.storage.getCaptures();
+  }
+
   // ---- Topics -------------------------------------------------------------
 
   async addTopic(input: NewTopicInput): Promise<Topic> {
@@ -82,6 +95,7 @@ export class MapStore {
       createdAt: ts,
       updatedAt: ts,
       rev: 0,
+      deviceId: await this.storage.getDeviceId(),
     });
     await this.storage.putTopic(topic);
     return topic;
@@ -100,6 +114,7 @@ export class MapStore {
       createdAt: existing.createdAt,
       updatedAt: now(),
       rev: existing.rev + 1,
+      deviceId: await this.storage.getDeviceId(),
     });
     await this.storage.putTopic(updated);
     return updated;
@@ -146,12 +161,29 @@ export class MapStore {
   /** Deleting a topic also removes any edges that touch it (no dangling edges). */
   async removeTopic(id: string): Promise<void> {
     const edges = await this.storage.getEdges();
-    await Promise.all(
-      edges
-        .filter((e) => e.from === id || e.to === id)
-        .map((e) => this.storage.deleteEdge(e.id)),
-    );
+    const touching = edges.filter((e) => e.from === id || e.to === id);
+    for (const e of touching) {
+      await this.storage.deleteEdge(e.id);
+      await this.tombstone("edges", e.id, e.rev);
+    }
+    const topic = (await this.storage.getTopics()).find((t) => t.id === id);
     await this.storage.deleteTopic(id);
+    await this.tombstone("topics", id, topic?.rev ?? 0);
+  }
+
+  /**
+   * Record a deletion so peers can't resurrect it. The tombstone's rev is one
+   * past the record's, so it outranks the copy a peer still holds — but a
+   * genuinely newer edit elsewhere still wins (see sync/merge.ts).
+   */
+  private async tombstone(collection: Collection, id: string, recordRev: number): Promise<void> {
+    await this.storage.putDeletion({
+      id,
+      collection,
+      deletedAt: now(),
+      rev: recordRev + 1,
+      deviceId: await this.storage.getDeviceId(),
+    });
   }
 
   // ---- Edges (prerequisites) ---------------------------------------------
@@ -180,14 +212,18 @@ export class MapStore {
       strength: opts.strength ?? "hard",
       origin: opts.origin ?? "user",
       createdAt: now(),
+      updatedAt: now(),
       rev: 0,
+      deviceId: await this.storage.getDeviceId(),
     };
     await this.storage.putEdge(edge);
     return edge;
   }
 
   async removeEdge(id: string): Promise<void> {
+    const edge = (await this.storage.getEdges()).find((e) => e.id === id);
     await this.storage.deleteEdge(id);
+    await this.tombstone("edges", id, edge?.rev ?? 0);
   }
 
   // ---- Derived views ------------------------------------------------------
@@ -224,6 +260,7 @@ export class MapStore {
       createdAt: ts,
       updatedAt: ts,
       rev: 0,
+      deviceId: await this.storage.getDeviceId(),
     };
     await this.storage.putRoadmap(roadmap);
     return roadmap;
@@ -281,6 +318,7 @@ export class MapStore {
       createdAt: ts,
       updatedAt: ts,
       rev: 0,
+      deviceId: await this.storage.getDeviceId(),
     };
     await this.storage.putRoadmap(roadmap);
     await this.setActiveRoadmap(def.id);
@@ -307,6 +345,8 @@ export class MapStore {
       bestStreak: 0,
       lastActiveDay: null,
       streakFreezes: 2,
+      dockPosition: "auto",
+      navLayout: "sidebar",
       createdAt: ts,
       updatedAt: ts,
       rev: 0,
@@ -400,6 +440,7 @@ export class MapStore {
         topicIds: [...roadmap.topicIds, p.nodeId],
         updatedAt: now(),
         rev: roadmap.rev + 1,
+        deviceId: await this.storage.getDeviceId(),
       });
     }
     return topic;
@@ -419,6 +460,9 @@ export class MapStore {
       rationale: input.rationale ?? "",
       status: "pending",
       createdAt: now(),
+      updatedAt: now(),
+      rev: 0,
+      deviceId: await this.storage.getDeviceId(),
     };
     await this.storage.putSuggestion(suggestion);
     return suggestion;
@@ -462,7 +506,7 @@ export class MapStore {
       result.edge = await this.addEdge(p.from, p.to, { origin: "ai" });
     }
 
-    await this.storage.putSuggestion({ ...s, status: "accepted" });
+    await this.storage.putSuggestion({ ...s, status: "accepted", updatedAt: now(), rev: s.rev + 1, deviceId: await this.storage.getDeviceId() });
     return result;
   }
 
@@ -470,7 +514,7 @@ export class MapStore {
     const suggestions = await this.storage.getSuggestions();
     const s = suggestions.find((x) => x.id === id);
     if (!s) throw new Error(`Suggestion not found: ${id}`);
-    await this.storage.putSuggestion({ ...s, status: "rejected" });
+    await this.storage.putSuggestion({ ...s, status: "rejected", updatedAt: now(), rev: s.rev + 1, deviceId: await this.storage.getDeviceId() });
   }
 
   // ---- People -------------------------------------------------------------
@@ -490,6 +534,9 @@ export class MapStore {
       canSignOff: input.canSignOff ?? true,
       notifyOnSlip: input.notifyOnSlip ?? true,
       createdAt: now(),
+      updatedAt: now(),
+      rev: 0,
+      deviceId: await this.storage.getDeviceId(),
     };
     await this.storage.putGuardian(guardian);
     return guardian;
@@ -511,9 +558,46 @@ export class MapStore {
       text: input.text ?? "",
       linkedTopicIds: [],
       createdAt: now(),
+      updatedAt: now(),
+      rev: 0,
+      deviceId: await this.storage.getDeviceId(),
     };
     await this.storage.putCapture(capture);
     return capture;
+  }
+
+  /**
+   * File a capture against a topic that already exists.
+   *
+   * Until this existed, "connect" could only mean `explore()` — mint a brand
+   * new node from the capture's title. That quietly guaranteed duplicates: save
+   * three articles about backpropagation and the map grows three nodes for it,
+   * each with its own prerequisites, and nothing in the product ever merges
+   * them again. A second brain whose contents can't point at each other is a
+   * list with extra steps.
+   *
+   * Idempotent, and silent on an unknown capture — this runs from proposal
+   * accept buttons, where the record may have been deleted on another device
+   * between the proposal being computed and the tap landing.
+   */
+  async linkCapture(captureId: string, topicId: string): Promise<Capture | null> {
+    const captures = await this.storage.getCaptures();
+    const capture = captures.find((c) => c.id === captureId);
+    if (!capture) return null;
+    if (capture.linkedTopicIds.includes(topicId)) return capture;
+
+    const g = await this.graph();
+    if (!g.topics.some((t) => t.id === topicId)) return null;
+
+    const next: Capture = {
+      ...capture,
+      linkedTopicIds: [...capture.linkedTopicIds, topicId],
+      updatedAt: now(),
+      rev: capture.rev + 1,
+      deviceId: await this.storage.getDeviceId(),
+    };
+    await this.storage.putCapture(next);
+    return next;
   }
 
   // ---- Portability --------------------------------------------------------
