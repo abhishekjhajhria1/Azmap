@@ -22,11 +22,17 @@ import '../design/controls.dart';
 import '../design/survey.dart';
 import '../design/tokens.dart';
 import '../prefs/preferences.dart';
+import '../sync/sync_controller.dart';
 
 class SettingsSheet extends StatelessWidget {
-  const SettingsSheet({super.key, required this.onClose});
+  const SettingsSheet({
+    super.key,
+    required this.onClose,
+    required this.onOpenPairing,
+  });
 
   final VoidCallback onClose;
+  final VoidCallback onOpenPairing;
 
   @override
   Widget build(BuildContext context) {
@@ -182,6 +188,38 @@ class SettingsSheet extends StatelessWidget {
             options: const ['Auto', 'Bottom', 'Top'],
             index: p.dock.index,
             onSelect: (i) => patch(p.copyWith(dock: DockPosition.values[i])),
+          ),
+
+          SizedBox(height: m.sectionGap),
+          _Section(title: 'DEVICES'),
+          GestureDetector(
+            onTap: onOpenPairing,
+            child: Container(
+              height: Metrics.tapTarget + 8,
+              alignment: Alignment.centerLeft,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                            SyncScope.of(context).connected
+                                ? 'Synced to your other devices'
+                                : 'Private — saved on this device',
+                            style: AbhText.headline.copyWith(color: c.fg)),
+                        const SizedBox(height: 2),
+                        Text('End-to-end encrypted. The server cannot read it.',
+                            style: AbhText.foot.copyWith(color: c.fgMuted)),
+                      ],
+                    ),
+                  ),
+                  Text(SyncScope.of(context).connected ? 'Manage' : 'Pair',
+                      style: AbhText.foot.copyWith(color: c.accent)),
+                ],
+              ),
+            ),
           ),
 
           SizedBox(height: m.sectionGap),

@@ -266,7 +266,7 @@ class PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AbhTheme.of(context);
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: ScaledBox(
         height: 52,
@@ -278,6 +278,59 @@ class PrimaryButton extends StatelessWidget {
         child: Text(label,
             textAlign: TextAlign.center,
             style: AbhText.headline.copyWith(color: c.accentContrast)),
+      ),
+    );
+  }
+}
+
+/// Press feedback: a small scale-down while your finger is down.
+///
+/// The single cheapest thing that separates an app that feels *built* from one
+/// that feels assembled. Without it a tap is a gamble — you press, nothing
+/// happens for the 80ms before the screen changes, and your thumb has already
+/// started to doubt. 0.975 is deliberately barely visible: it should register
+/// as the surface yielding, not as an animation playing.
+///
+/// Transform only. Animating anything that triggers layout here would cost a
+/// frame on exactly the interaction that must never drop one.
+class Pressable extends StatefulWidget {
+  const Pressable({
+    super.key,
+    required this.child,
+    required this.onTap,
+    this.onLongPress,
+    this.scale = 0.975,
+  });
+
+  final Widget child;
+  final VoidCallback onTap;
+  final VoidCallback? onLongPress;
+  final double scale;
+
+  @override
+  State<Pressable> createState() => _PressableState();
+}
+
+class _PressableState extends State<Pressable> {
+  bool _down = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTapDown: (_) => setState(() => _down = true),
+      // Both of these, always. Handling only onTapUp leaves the widget stuck
+      // shrunk when a press turns into a scroll — a small bug that makes a
+      // whole list feel broken.
+      onTapUp: (_) => setState(() => _down = false),
+      onTapCancel: () => setState(() => _down = false),
+      onTap: widget.onTap,
+      onLongPress: widget.onLongPress,
+      child: AnimatedScale(
+        scale: _down ? widget.scale : 1,
+        duration: AbhTheme.durationOf(context, const Duration(milliseconds: 110)),
+        curve: Curves.easeOut,
+        child: widget.child,
       ),
     );
   }

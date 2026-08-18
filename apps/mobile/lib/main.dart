@@ -13,6 +13,7 @@ library;
 
 import 'dart:async';
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'data/database.dart';
@@ -25,6 +26,7 @@ import 'design/tokens.dart';
 import 'domain/models.dart';
 import 'onboarding/onboarding.dart';
 import 'prefs/preferences.dart';
+import 'settings/pairing_sheet.dart';
 import 'settings/settings_sheet.dart';
 import 'search/omni.dart';
 import 'spaces/brain_space.dart';
@@ -44,11 +46,18 @@ Future<void> main() async {
   // Restored, not awaited. A device with a slow network must not sit on a
   // blank screen while a sync completes — the local map is already on disk and
   // is the thing the user came for.
-  final sync = SyncController(repository: repository, deviceId: deviceId);
+  final map = MapController(repository);
+  final sync = SyncController(
+    repository: repository,
+    deviceId: deviceId,
+    // The link that makes the ecosystem real: records arriving from a laptop
+    // or the browser extension repaint the phone without a restart.
+    onRemoteChange: map.reloadFromDisk,
+  );
   unawaited(sync.restore());
 
   runApp(AbhApp(
-    controller: MapController(repository),
+    controller: map,
     prefs: prefs,
     sync: sync,
   ));
@@ -184,6 +193,12 @@ class _ShellState extends State<_Shell> {
   Space? _space;
   List<Topic> _celebrating = const [];
   bool _settingsOpen = false;
+  bool _pairingOpen = false;
+
+  /// Set when a search result is chosen, so Brain opens *on* that node rather
+  /// than dumping you on the map to find it again yourself. A search that
+  /// navigates to the right screen and then abandons you is barely a search.
+  String? _focusTopicId;
 
   /// The home-space preference is a *starting* point, not a permanent binding —
   /// so it seeds this once and then the user's taps own it. Re-reading the
@@ -245,7 +260,20 @@ class _ShellState extends State<_Shell> {
             // DocColumn caps the line length. Without it a 1024pt iPad renders
             // body text at ~150 characters per line, which is roughly double
             // what anyone can read without losing their place.
-            child: DocColumn(child: _spaceFor(_current)),
+            // On a tablet the leftover width becomes a second column rather
+            // than empty margin — the difference between "designed for tablet"
+            // and "phone, stretched". Below that width the detail pane is
+            // dropped, not stacked: stacking buries it under a screen of
+            // scrolling, which is worse than absent.
+            child: TwoPane(
+              primary: DocColumn(child: _spaceFor(_current)),
+              detail: _ContextPane(
+                onCelebrate: (unlocked) {
+                  if (unlocked.isEmpty) return;
+                  setState(() => _celebrating = unlocked);
+                },
+              ),
+            ),
           ),
         ),
 
@@ -256,7 +284,13 @@ class _ShellState extends State<_Shell> {
           bottom: atTop ? null : dockOffset,
           child: FloatingDock(
             active: _current,
-            onSelect: (s) => setState(() => _space = s),
+            onSelect: (s) {
+              // A light tick on every space change. Cheap, and it is most of
+              // what separates an app that feels built from one that feels
+              // assembled — the dock now confirms itself before the pixels do.
+              HapticFeedback.selectionClick();
+              setState(() => _space = s);
+            },
             onLongPress: () => setState(() => _settingsOpen = true),
           ),
         ),
@@ -269,7 +303,10 @@ class _ShellState extends State<_Shell> {
           child: Align(
             alignment: atTop ? Alignment.bottomRight : Alignment.topRight,
             child: OmniSearch(
-              onOpenTopic: (topic) => setState(() => _space = Space.brain),
+              onOpenTopic: (topic) => setState(() {
+                _space = Space.brain;
+                _focusTopicId = topic.id;
+              }),
             ),
           ),
         ),
@@ -286,6 +323,14 @@ class _ShellState extends State<_Shell> {
           Positioned.fill(
             child: SettingsSheet(
               onClose: () => setState(() => _settingsOpen = false),
+              onOpenPairing: () => setState(() => _pairingOpen = true),
+            ),
+          ),
+
+        if (_pairingOpen)
+          Positioned.fill(
+            child: PairingSheet(
+              onClose: () => setState(() => _pairingOpen = false),
             ),
           ),
       ],
@@ -293,7 +338,12 @@ class _ShellState extends State<_Shell> {
   }
 
   Widget _spaceFor(Space space) => switch (space) {
-        Space.brain => const BrainSpace(),
+        Space.brain => BrainSpace(
+            focusTopicId: _focusTopicId,
+            // Cleared once consumed, so the node isn't re-selected every time
+            // you come back to the map an hour later.
+            onFocusConsumed: () => setState(() => _focusTopicId = null),
+          ),
         Space.roadmap => RoadmapSpace(
             onCelebrate: (unlocked) {
               if (unlocked.isEmpty) return;
@@ -315,50 +365,244 @@ class _ShellState extends State<_Shell> {
 ///
 /// Dismissed by tapping anywhere, and it never blocks: the map underneath is
 /// already updated, so a user who taps straight through loses nothing.
-class _Celebration extends StatelessWidget {
+class _Celebration extends StatefulWidget {
   const _Celebration({required this.unlocked, required this.onDone});
 
   final List<Topic> unlocked;
   final VoidCallback onDone;
 
   @override
+  State<_Celebration> createState() => _CelebrationState();
+}
+
+/// The one moment the app raises its voice.
+///
+/// Finishing a topic that opens three more is the whole promise landing at
+/// once, and it deserves to be *staged* rather than logged in a toast that
+/// slides away while you're still reading it.
+///
+/// The staging is a stagger: the headline settles, then each unlocked topic
+/// arrives 70ms behind the last. That cadence is the entire effect — showing
+/// all four at once reads as a dialog, while showing them in sequence reads as
+/// doors opening, which is what actually happened to the map.
+///
+/// It never blocks. The map underneath is already updated, so tapping straight
+/// through costs nothing, and the whole thing is skippable by design — a
+/// reward you cannot dismiss stops being a reward around the fourth time.
+class _CelebrationState extends State<_Celebration>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 900),
+  );
+
+  bool _started = false;
+
+  @override
+  void initState() {
+    super.initState();
+    HapticFeedback.heavyImpact();
+  }
+
+  /// Not `initState`: reading an InheritedWidget there is illegal —
+  /// `dependOnInheritedWidgetOfExactType` needs the element to be mounted in
+  /// the tree, and Flutter asserts on it. `didChangeDependencies` is the first
+  /// callback where the theme is legitimately readable.
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    // Jumped to the end when motion is off, so the content is simply *there*.
+    // Reduced motion means no movement, never no information.
+    if (AbhTheme.motionOf(context)) {
+      _controller.forward();
+    } else {
+      _controller.value = 1;
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  /// A window of the timeline for item [i], each starting after the last.
+  Animation<double> _step(int i) => CurvedAnimation(
+        parent: _controller,
+        curve: Interval(
+          (0.18 + i * 0.14).clamp(0.0, 0.85),
+          (0.5 + i * 0.14).clamp(0.15, 1.0),
+          // Slight overshoot: things that arrive land, they don't glide to a
+          // halt. It's the difference between a spring and a fade.
+          curve: Curves.easeOutBack,
+        ),
+      );
+
+  @override
   Widget build(BuildContext context) {
     final c = AbhTheme.of(context);
+    final shown = widget.unlocked.take(4).toList();
+
     return GestureDetector(
-      onTap: onDone,
+      onTap: widget.onDone,
       child: ColoredBox(
-        color: c.bg.withValues(alpha: 0.86),
+        color: c.bg.withValues(alpha: 0.92),
         child: Center(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 34),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  unlocked.length == 1
-                      ? 'That opened something up.'
-                      : 'That opened up ${unlocked.length} things.',
-                  textAlign: TextAlign.center,
-                  style: AbhText.title1.copyWith(color: c.fg),
-                ),
-                const SizedBox(height: 18),
-                for (final t in unlocked.take(4))
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 5),
+            child: AnimatedBuilder(
+              animation: _controller,
+              builder: (context, _) => Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _Rise(
+                    t: CurvedAnimation(
+                      parent: _controller,
+                      curve: const Interval(0, 0.4, curve: Curves.easeOutCubic),
+                    ).value,
                     child: Text(
-                      t.title,
+                      widget.unlocked.length == 1
+                          ? 'That opened something up.'
+                          : 'That opened up ${widget.unlocked.length} things.',
                       textAlign: TextAlign.center,
-                      style: AbhText.headline.copyWith(color: c.accent),
+                      style: AbhText.title1.copyWith(color: c.fg),
                     ),
                   ),
-                const SizedBox(height: 26),
-                Text('Tap to carry on',
-                    style: AbhText.foot.copyWith(color: c.fgSubtle)),
-              ],
+                  const SizedBox(height: 20),
+                  for (var i = 0; i < shown.length; i++)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 5),
+                      child: _Rise(
+                        t: _step(i).value,
+                        child: Text(
+                          shown[i].title,
+                          textAlign: TextAlign.center,
+                          style: AbhText.headline.copyWith(color: c.accent),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 28),
+                  _Rise(
+                    t: CurvedAnimation(
+                      parent: _controller,
+                      curve: const Interval(0.65, 1),
+                    ).value,
+                    child: Text('Tap to carry on',
+                        style: AbhText.foot.copyWith(color: c.fgSubtle)),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Fade and lift, driven by a 0–1 value. Opacity and transform only — anything
+/// that triggers layout here would drop the frames this exists to spend well.
+class _Rise extends StatelessWidget {
+  const _Rise({required this.t, required this.child});
+
+  final double t;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Opacity(
+        opacity: t.clamp(0.0, 1.0),
+        child: Transform.translate(
+          offset: Offset(0, (1 - t.clamp(0.0, 1.0)) * 14),
+          child: child,
+        ),
+      );
+}
+
+/// The second column on a tablet: what to do now, and what you just saved.
+///
+/// Deliberately *not* a duplicate of whatever is on the left. A two-pane layout
+/// that shows the same list twice is worse than one column, because it spends
+/// half the screen confirming what you can already see. This answers the
+/// question the primary pane doesn't: of everything open to me, what next?
+class _ContextPane extends StatelessWidget {
+  const _ContextPane({required this.onCelebrate});
+
+  final ValueChanged<List<Topic>> onCelebrate;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = AbhTheme.of(context);
+    final m = AbhTheme.metricsOf(context);
+    final map = MapScope.of(context);
+    final open = map.availableNow;
+
+    return ListView(
+      padding: EdgeInsets.symmetric(horizontal: m.pagePadH),
+      children: [
+        Text('OPEN TO YOU', style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
+        SizedBox(height: m.gap),
+
+        if (open.isEmpty)
+          Text(
+            map.topics.isEmpty
+                ? 'Nothing on your map yet.'
+                : "You've cleared everything that was open.",
+            style: AbhText.body.copyWith(color: c.fgMuted),
+          )
+        else
+          Stacked(
+            children: [
+              for (final t in open.take(5))
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    onCelebrate(map.complete(t.id));
+                  },
+                  child: ScaledBox(
+                    height: 52,
+                    alignment: Alignment.centerLeft,
+                    padding: EdgeInsets.symmetric(
+                        horizontal: m.rowPadH, vertical: m.rowPadV),
+                    child: Text(
+                      t.title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AbhText.body.copyWith(color: c.fg),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+
+        SizedBox(height: m.sectionGap),
+        Text('JUST SAVED', style: AbhText.eyebrow.copyWith(color: c.fgSubtle)),
+        SizedBox(height: m.gap),
+
+        if (map.captures.isEmpty)
+          Text('Nothing captured yet.',
+              style: AbhText.body.copyWith(color: c.fgMuted))
+        else
+          Stacked(
+            children: [
+              for (final capture in map.captures.take(4))
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                      horizontal: m.rowPadH, vertical: m.rowPadV),
+                  child: Text(
+                    capture.title.isEmpty
+                        ? (capture.url ?? 'Untitled')
+                        : capture.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AbhText.foot.copyWith(color: c.fgMuted),
+                  ),
+                ),
+            ],
+          ),
+      ],
     );
   }
 }

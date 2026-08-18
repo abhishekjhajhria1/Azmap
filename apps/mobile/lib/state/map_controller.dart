@@ -52,6 +52,17 @@ class MapController extends ChangeNotifier {
 
   int get percentKnown => progressPercent(_topics);
 
+  /// Re-read everything from disk.
+  ///
+  /// Exactly one caller: a sync that just wrote records this object has never
+  /// seen. Patching in place is right for *our* writes, because we hold the
+  /// record that was written — but a peer's changes arrive in the database
+  /// behind our back, and without this the screen keeps showing the old map
+  /// until the app is force-quit. That is the single most damaging bug
+  /// possible in a cross-device product: it makes sync look like it does
+  /// nothing at all.
+  void reloadFromDisk() => _reload();
+
   /// The one full read, on startup. Everything after this is a patch.
   void _reload() {
     _topics = _repo.topics();

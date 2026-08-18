@@ -19,6 +19,7 @@ library;
 
 import 'dart:math' as math;
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../design/layout.dart';
@@ -28,7 +29,13 @@ import '../domain/models.dart';
 import '../state/map_controller.dart';
 
 class BrainSpace extends StatefulWidget {
-  const BrainSpace({super.key});
+  const BrainSpace({super.key, this.focusTopicId, this.onFocusConsumed});
+
+  /// A node to open on, handed over by search. Without it, searching for
+  /// something and landing on the map is only half an answer — you still have
+  /// to find it yourself, which is the work search was meant to do.
+  final String? focusTopicId;
+  final VoidCallback? onFocusConsumed;
 
   @override
   State<BrainSpace> createState() => _BrainSpaceState();
@@ -40,6 +47,31 @@ class _BrainSpaceState extends State<BrainSpace> {
   Offset _panStart = Offset.zero;
   double _zoomStart = 1;
   String? _selected;
+
+  @override
+  void didUpdateWidget(BrainSpace old) {
+    super.didUpdateWidget(old);
+    _consumeFocus();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _consumeFocus();
+  }
+
+  /// Take the requested node, then tell the shell to forget it — otherwise
+  /// coming back to the map an hour later re-selects the same thing.
+  void _consumeFocus() {
+    final id = widget.focusTopicId;
+    if (id == null) return;
+    _selected = id;
+    // After the frame: calling back into the parent's setState during build
+    // is the classic "setState called during build" crash.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onFocusConsumed?.call();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +146,9 @@ class _BrainSpaceState extends State<BrainSpace> {
               unlocks: wouldUnlock(selected.id, map.graph).length,
               onClose: () => setState(() => _selected = null),
               onComplete: () {
+                // The one moment worth a real thump: something the map was
+                // holding shut just opened.
+                HapticFeedback.mediumImpact();
                 map.complete(selected.id);
                 setState(() {});
               },

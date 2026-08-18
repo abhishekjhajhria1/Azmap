@@ -25,7 +25,19 @@ import 'crypto.dart';
 import 'sync_client.dart';
 
 class SyncController extends ChangeNotifier with WidgetsBindingObserver {
-  SyncController({required this.repository, required this.deviceId});
+  SyncController({
+    required this.repository,
+    required this.deviceId,
+    this.onRemoteChange,
+  });
+
+  /// Called when a sync wrote records from another device.
+  ///
+  /// The map in memory is now stale and has no way to know it — a peer's
+  /// writes go straight to the database. Without this the app shows yesterday's
+  /// map until it is force-quit, which reads as "sync is broken" and is the
+  /// most damaging failure a cross-device product can have.
+  final VoidCallback? onRemoteChange;
 
   static const _enrolmentKey = 'abh.enrolment';
   static const _keyKey = 'abh.accountKey';
@@ -57,6 +69,7 @@ class SyncController extends ChangeNotifier with WidgetsBindingObserver {
         enrolment: Enrolment.fromJson(jsonDecode(raw) as Map<String, dynamic>),
         crypto: await AccountCrypto.fromRaw(key),
         deviceId: deviceId,
+        onChanged: onRemoteChange,
       );
       unawaited(syncNow());
     } catch (_) {
@@ -92,6 +105,7 @@ class SyncController extends ChangeNotifier with WidgetsBindingObserver {
       enrolment: enrolment,
       crypto: crypto,
       deviceId: deviceId,
+      onChanged: onRemoteChange,
     );
     await syncNow();
   }

@@ -23,8 +23,34 @@ at all, not a sign something is conceptually wrong.
 | `lib/spaces/` | Brain, Roadmap, Capture, People |
 | `test/` | Conformance corpus, `LocalMind`, preferences |
 
-**Not done yet:** the share-sheet capture target, pairing UI (the client is
-written; nothing shows a QR scanner yet), and the guide reader.
+**Not done yet:** the share-sheet capture target and the guide reader.
+
+## Four things that were broken, found by audit
+
+**Sync wrote to the database and the UI never found out.** The worst of them.
+A peer's records land in SQLite behind `MapController`'s back, and nothing
+triggered a re-read — so you'd add a topic on your laptop, open your phone, and
+see the old map until you force-quit. That makes sync look like it does
+*nothing*, which is the most damaging possible failure in a cross-device
+product. `SyncClient` now reports once per sync that changed something (once,
+not per record — a 200-row pull firing 200 rebuilds drops every frame it lands
+during) and the shell re-reads.
+
+**`TwoPane` existed and was never used.** The tablet layout was documented and
+not wired. The shell now uses it, with a context pane that answers what the
+primary column doesn't — of everything open to me, what next? A two-pane layout
+showing the same list twice is worse than one column.
+
+**Search navigated and then abandoned you.** Choosing a result switched to
+Brain without selecting the node, leaving you to find it yourself — which is
+the work search was supposed to do.
+
+**"Pair a device" led nowhere.** The client was written; nothing could reach
+it. `PairingSheet` takes a pasted link, because the alternative is a camera
+package, a permission prompt and a privacy-policy line for a flow people run
+once. The link's fragment carries the key, and browsers never transmit
+fragments — which is what lets the relay hand out a token while staying unable
+to read a record, and why the sheet says plainly that nobody can reset it.
 
 ## Adaptive layout — what was actually broken
 

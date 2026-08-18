@@ -30,6 +30,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:flutter/foundation.dart' show VoidCallback;
 import 'package:http/http.dart' as http;
 
 import '../data/map_repository.dart';
@@ -101,8 +102,15 @@ class SyncClient {
     required this.enrolment,
     required this.crypto,
     required this.deviceId,
+    this.onChanged,
     http.Client? httpClient,
   }) : _http = httpClient ?? http.Client();
+
+  /// Fired once per sync that actually wrote something.
+  ///
+  /// Once, not per record: a pull of two hundred rows firing two hundred
+  /// rebuilds would drop every frame of the animation it lands during.
+  final VoidCallback? onChanged;
 
   final MapRepository repository;
   final Enrolment enrolment;
@@ -125,7 +133,8 @@ class SyncClient {
 
   Future<void> _run() async {
     await _push();
-    await _pull();
+    final applied = await _pull();
+    if (applied) onChanged?.call();
   }
 
   // ---- push ----------------------------------------------------------------
@@ -147,9 +156,10 @@ class SyncClient {
 
   // ---- pull ----------------------------------------------------------------
 
-  Future<void> _pull() async {
+  Future<bool> _pull() async {
     var cursor = repository.cursor();
     var more = true;
+    var applied = false;
 
     while (more) {
       final page = await _get('/v1/sync/pull?since=$cursor&limit=200');
@@ -167,6 +177,7 @@ class SyncClient {
           final decoded = await crypto.open<Map<String, dynamic>>(
               Sealed.fromJson((item['sealed'] as Map).cast<String, dynamic>()));
           _apply(SyncEntry.fromJson(decoded));
+          applied = true;
         } catch (_) {
           // One unreadable entry must not stop the page. It means a key
           // mismatch or a corrupted row, and neither is fixed by refusing to
@@ -182,6 +193,7 @@ class SyncClient {
       repository.setCursor(cursor);
       more = page['hasMore'] as bool? ?? false;
     }
+    return applied;
   }
 
   /// Apply one incoming record under the total order.

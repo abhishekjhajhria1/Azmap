@@ -9,9 +9,11 @@
 /// of outlined cards. Outlining every row is what turns a list into a form.
 library;
 
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import '../design/survey.dart';
+import '../design/controls.dart';
 import '../design/layout.dart';
 import '../design/tokens.dart';
 import '../domain/graph.dart';
@@ -72,7 +74,10 @@ class RoadmapSpace extends StatelessWidget {
           SizedBox(height: m.sectionGap - 8),
           _PrimaryAction(
             label: 'Mark known',
-            onTap: () => onCelebrate(map.complete(next.id)),
+            onTap: () {
+              HapticFeedback.mediumImpact();
+              onCelebrate(map.complete(next.id));
+            },
           ),
           if (prefs.guidance == Guidance.full) ...[
             SizedBox(height: m.gap),
@@ -106,8 +111,12 @@ class RoadmapSpace extends StatelessWidget {
                 guidance: prefs.guidance,
                 onToggle: () {
                   if (t.progress == Progress.known) {
+                    // Lighter for an undo than for a completion: the weight of
+                    // the feedback should match the weight of the event.
+                    HapticFeedback.selectionClick();
                     map.setProgress(t.id, Progress.notStarted);
                   } else {
+                    HapticFeedback.mediumImpact();
                     onCelebrate(map.complete(t.id));
                   }
                 },
@@ -278,7 +287,7 @@ class _PrimaryAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final c = AbhTheme.of(context);
-    return GestureDetector(
+    return Pressable(
       onTap: onTap,
       child: ScaledBox(
         height: 50,
