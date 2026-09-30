@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="launcher_background">#3D5AFE</color>
+    <!-- Icon colour inside the notification, matched to the shade's light/dark background. -->
+    <color name="notification_fg">#DE000000</color>
+</resources>

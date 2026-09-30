@@ -28,6 +28,7 @@ This repo is the multi-surface home for that idea.
 | [`apps/extension`](apps/extension) | Browser extension (WXT, MV3). Capture what you read, straight into the map. | ✅ built |
 | [`apps/mobile`](apps/mobile) | Flutter — one codebase for iOS + Android, adaptive for phone/foldable/tablet/iPad. Mirrors `apps/app`. | 🔜 planned |
 | [`apps/desktop`](apps/desktop) | All-OS desktop app (Tauri wraps `apps/app`). | 🔜 planned |
+| [`apps/volume`](apps/volume) | Volume Bar — native Android app with volume controls in the notification shade and a Quick Settings tile. | ✅ built |
 
 Architecture and the reasoning behind "one shared model, distinct experiences":
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
