@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Volume Bar</string>
+    <string name="tagline">Volume sliders in your notification shade and Quick Settings.</string>
+
+    <string name="stream_media">Media</string>
+    <string name="stream_ring">Ring</string>
+    <string name="stream_notification">Notifications</string>
+    <string name="stream_alarm">Alarm</string>
+    <string name="stream_call">Call</string>
+
+    <string name="percent">%1$d%%</string>
+
+    <string name="section_notification">Notification</string>
+    <string name="show_in_notification">Show volume controls in the notification shade</string>
+    <string name="notification_streams">Show these in the notification:</string>
+
+    <string name="section_tile">Quick Settings tile</string>
+    <string name="tile_help">Add the Volume tile to your Quick Settings (pull down twice, then tap the pencil). Tap it for sliders on top of the drop-down; long-press to open this app.</string>
+    <string name="add_tile">Add tile to Quick Settings</string>
+    <string name="tile_added">Tile added</string>
+    <string name="tile_already_added">Tile is already in Quick Settings</string>
+    <string name="system_panel">Open system volume panel</string>
+
+    <string name="tile_label">Volume</string>
+    <string name="tile_subtitle">Media %1$d%%</string>
+    <string name="done">Done</string>
+
+    <string name="channel_name">Volume controls</string>
+    <string name="channel_description">The always-on notification with volume buttons.</string>
+
+    <string name="cd_mute">Mute or unmute %1$s</string>
+    <string name="cd_lower">Lower %1$s volume</string>
+    <string name="cd_raise">Raise %1$s volume</string>
+
+    <string name="need_notification_permission">Allow notifications to show volume controls there.</string>
+    <string name="need_dnd_access">Allow Do Not Disturb access to change ring volume while it\'s on.</string>
+</resources>

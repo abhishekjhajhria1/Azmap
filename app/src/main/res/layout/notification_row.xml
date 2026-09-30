@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Inflated by System UI, not AppCompat, so android:tint is the right attribute. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="UseAppTint"
+    android:layout_width="match_parent"
+    android:layout_height="48dp"
+    android:gravity="center_vertical"
+    android:orientation="horizontal">
+
+    <ImageButton
+        android:id="@+id/icon"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_round_button"
+        android:padding="8dp"
+        android:scaleType="fitCenter"
+        android:tint="@color/notification_fg" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginEnd="4dp"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/label"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:textAppearance="@android:style/TextAppearance.Material.Notification.Title"
+                android:textSize="13sp" />
+
+            <TextView
+                android:id="@+id/value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textAppearance="@android:style/TextAppearance.Material.Notification"
+                android:textSize="12sp" />
+        </LinearLayout>
+
+        <ProgressBar
+            android:id="@+id/level"
+            style="@android:style/Widget.Material.ProgressBar.Horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp" />
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/minus"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_round_button"
+        android:padding="9dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_minus"
+        android:tint="@color/notification_fg" />
+
+    <ImageButton
+        android:id="@+id/plus"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:layout_marginStart="4dp"
+        android:background="@drawable/bg_round_button"
+        android:padding="9dp"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ic_plus"
+        android:tint="@color/notification_fg" />
+</LinearLayout>

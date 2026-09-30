@@ -1,103 +1,51 @@
-# ABH
+# Volume Bar (Android)
 
-> **Everything you learn, on one map that grows with you — and friends who can
-> see it happening.**
+A small native Android app that puts volume controls where you can reach them
+without opening anything:
 
-You learn constantly and keep almost none of it. Course platforms hand you a
-playlist and no idea where it fits. Note apps capture everything and organise
-nothing. Roadmap sites show a beautiful path and forget you the moment you
-close the tab. Nothing holds what you know as a *living thing*.
+- **In the notification shade.** An always-on, silent notification with a row
+  per stream — tap the icon to mute, `−` / `+` to step the volume, with a live
+  level bar. Collapsed it shows the first stream; expand it for all of them.
+  It stays in sync when the volume changes from the hardware keys or other apps.
+- **In the Quick Settings drop-down.** A **Volume** tile. Tap it and sliders for
+  every stream open on top of the pulled-down shade. Long-press opens the app.
+  The tile's subtitle shows the current media volume.
 
-ABH does. Name anything you want to learn and get a real path through it — or
-let AI build one for a subject nobody has mapped yet. Your progress becomes a
-**graph, not a list**: topics unlock as you clear what they need, finishing one
-thing visibly opens several others, and the people who matter can see how far
-you've actually come. It works offline, needs no account, and your learning
-never leaves your device.
+Streams: Media, Ring, Notifications, Alarm, Call. You choose which appear in the
+notification. The notification comes back after a reboot if you left it on.
 
-This repo is the multi-surface home for that idea.
+Kotlin + Material 3 Views, no other dependencies. minSdk 26 (Android 8), target 35.
 
-## What's here
+## Build
 
-| Path | What it is | Status |
-| --- | --- | --- |
-| [`packages/core`](packages/core) | `@abh/core` — the shared brain: domain model, unlock/reveal engine, roadmaps, suggestions, local-first storage + sync seams. Every surface reuses it. | ✅ built, 35 tests |
-| [`packages/ui`](packages/ui) | `@abh/ui` — design system: theme, adaptive shell (bottom-nav↔rail↔sidebar), the WebGL `GraphView` (Sigma + graphology, worker layout), and the reactive `useAbh` store. | ✅ built |
-| [`apps/app`](apps/app) | **The product** — a local-first, offline PWA (Vite + React). One map, distinct spaces: second brain, focused roadmaps, ask-anything, capture. Runs on the real store. | ✅ built |
-| [`apps/website`](apps/website) | Marketing site (Next.js). Landing page + live-demo hero. | ✅ built |
-| [`apps/extension`](apps/extension) | Browser extension (WXT, MV3). Capture what you read, straight into the map. | ✅ built |
-| [`apps/mobile`](apps/mobile) | Flutter — one codebase for iOS + Android, adaptive for phone/foldable/tablet/iPad. Mirrors `apps/app`. | 🔜 planned |
-| [`apps/desktop`](apps/desktop) | All-OS desktop app (Tauri wraps `apps/app`). | 🔜 planned |
-
-Architecture and the reasoning behind "one shared model, distinct experiences":
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
-
-## Quick start
-
-Requires **Node ≥ 20** and **pnpm 10**.
+Needs JDK 17+ and the Android SDK (set `sdk.dir` in `local.properties` or
+`ANDROID_HOME`).
 
 ```bash
-pnpm install                       # install the whole workspace
-pnpm --filter @abh/core test       # run the domain engine tests (35)
-pnpm -r build                      # build core, ui, and every app
+./gradlew assembleDebug
+adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### Run the app (the product)
+Or open this folder in Android Studio and hit Run.
 
-```bash
-pnpm --filter @abh/app dev         # http://localhost:5173
-```
+## Using it
 
-Onboard, start a roadmap, and watch it flow into your second-brain mind map.
-Everything persists on-device (IndexedDB); it works offline.
+1. Open **Volume Bar**, turn on *Show volume controls in the notification shade*
+   and allow notifications.
+2. Tap *Add tile to Quick Settings* (Android 13+), or pull the shade down twice,
+   tap the pencil, and drag **Volume** in.
 
-### Run the website
+Changing ring/notification volume to or from silent while Do Not Disturb is on
+needs Do Not Disturb access; the app sends you to that setting when it's needed.
 
-```bash
-pnpm --filter @abh/website dev     # http://localhost:3000
-```
+## How it's put together
 
-The hero map is playable — click an amber ("open to you now") node and the
-real `@abh/core` engine recomputes what unlocks.
-
-### Run the extension
-
-```bash
-pnpm ext:dev          # launches a dev browser with the extension loaded
-# or build an unpacked extension:
-pnpm --filter @abh/extension build   # → apps/extension/.output/chrome-mv3
-```
-
-Load `apps/extension/.output/chrome-mv3` as an unpacked extension in Chrome
-(`chrome://extensions` → Developer mode → Load unpacked). Try the right-click
-**"Save to ABH map"** and the popup.
-
-## The core idea, in one snippet
-
-```ts
-import { MapStore, MemoryStorage } from "@abh/core";
-
-const map = new MapStore(new MemoryStorage());
-const html = await map.addTopic({ title: "HTML" });
-const react = await map.addTopic({ title: "React" });
-await map.addEdge(html.id, react.id);      // React needs HTML first
-
-await map.availableNow();                   // [HTML]  — React is locked
-const { unlocked } = await map.complete(html.id);
-// unlocked === [React]  — finishing one thing opens the next
-```
-
-## Principles
-
-- **The domain has no framework.** Every rule about the map lives in
-  `@abh/core`, once.
-- **AI proposes, you accept.** Nothing the AI suggests joins your map until you
-  tap to accept it.
-- **On-device first, sync optional.** No server assumed anywhere in the domain;
-  your data is yours.
-
-## Status
-
-Pre-launch. Building the web surfaces first (extension + site), then the mobile
-and desktop apps. Data (roadmaps, sources, prerequisite links) is fed in later
-— the foundation comes first.
+| File | Role |
+| --- | --- |
+| `Volumes.kt` | Wraps `AudioManager`; catches the DND `SecurityException` |
+| `VolumeObserver.kt` | Fires on any volume or ringer change, from anywhere |
+| `VolumeNotification.kt` | Builds the custom `RemoteViews` notification |
+| `VolumeNotificationService.kt` | Foreground service that keeps it alive and current |
+| `VolumeActionReceiver.kt` | Handles the notification's buttons |
+| `VolumeTileService.kt` | The Quick Settings tile and its slider dialog |
+| `VolumePanel.kt` | The slider list, shared by the app screen and the tile dialog |
