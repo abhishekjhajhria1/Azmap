@@ -22,11 +22,12 @@ Needs JDK 17+ and the Android SDK (set `sdk.dir` in `local.properties` or
 `ANDROID_HOME`).
 
 ```bash
+cd volume-bar
 ./gradlew assembleDebug
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-Or open this folder in Android Studio and hit Run.
+Or open the `volume-bar` folder in Android Studio and hit Run.
 
 ## Using it
 
